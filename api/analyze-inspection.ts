@@ -1,7 +1,5 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-// Inline minimal rules engine for serverless (avoids TS path import issues)
 
 const SYSTEM_INSTRUCTION = `You are an evidence-only warehouse receiving inspector.
 Analyze only the supplied Purchase Order data, product catalogue data, scanned barcode data, and named inspection photographs.
@@ -12,7 +10,7 @@ For each observation return: checkName, observedValue, certainty (CONFIRMED or U
 Do not decide ACCEPT, EXCEPTION, or REVIEW_REQUIRED.
 Return only valid JSON: { "observations": [...], "damageIssues": [...], "photoQualityIssues": [...] }`;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
@@ -42,15 +40,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         variant: poLine.expected_variant || product.variant || 'Standard',
         colour: poLine.expected_colour || product.colour || 'N/A',
       },
-      scannedBarcodes: (barcodeScans || []).map((s: any) => ({
-        value: s.barcode_value || s.raw_scan_value,
-        symbology: s.symbology,
-      })),
+      scannedBarcodes: (barcodeScans || []).map((s: any) => ({ value: s.barcode_value || s.raw_scan_value, symbology: s.symbology })),
       evidencePhotos: (photos || []).map((p: any) => ({ photoId: p.id, photoType: p.photo_type })),
     };
 
     const textPrompt = `Here is the warehouse receiving inspection context:\n${JSON.stringify(receivingContext, null, 2)}\n\nAnalyze all attached shipment photographs. Report factual observations only. Return structured JSON only.`;
-    const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [{ text: textPrompt }];
+    const parts: any[] = [{ text: textPrompt }];
 
     for (const photo of photos || []) {
       if (photo.base64) {
@@ -75,91 +70,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (Array.isArray(parsed.observations)) {
         geminiObservations = parsed.observations.map((o: any) => ({
-          checkName: o.checkName,
-          observedValue: o.observedValue,
+          checkName: o.checkName, observedValue: o.observedValue,
           certainty: o.certainty === 'CONFIRMED' ? 'HIGH' : 'UNCERTAIN',
           confidence: Number(o.confidence) || 0.5,
           reason: o.reason || 'Observed in photo evidence',
-          photoId: o.photoId,
-          photoType: o.photoType,
+          photoId: o.photoId, photoType: o.photoType,
         }));
         damageIssues = parsed.damageIssues || [];
         photoQualityIssues = parsed.photoQualityIssues || [];
       }
     } catch (aiErr) {
       console.warn('Gemini API error:', aiErr);
-      geminiObservations = [{
-        checkName: 'PHOTO_COMPLETENESS',
-        observedValue: (photos || []).map((p: any) => p.photo_type),
-        certainty: 'UNCERTAIN',
-        confidence: 0.5,
-        reason: 'AI service could not process image payload. Routing to manager review.',
-      }];
+      geminiObservations = [{ checkName: 'PHOTO_COMPLETENESS', observedValue: (photos || []).map((p: any) => p.photo_type), certainty: 'UNCERTAIN', confidence: 0.5, reason: 'AI service could not process image payload. Routing to manager review.' }];
     }
 
-    // Simple deterministic verdict
     const scanned = (barcodeScans || []).map((s: any) => s.barcode_value || s.raw_scan_value || '');
     const expectedGTIN = product.gtin || product.barcode_gtin || '';
     const barcodeMatch = expectedGTIN ? scanned.some((v: string) => v.includes(expectedGTIN)) : false;
-    const photoCount = (photos || []).length;
     const allUncertain = geminiObservations.every((o: any) => o.certainty === 'UNCERTAIN');
 
-    let finalDecision: 'ACCEPT' | 'EXCEPTION' | 'REVIEW_REQUIRED' = 'REVIEW_REQUIRED';
+    let finalDecision: string = 'REVIEW_REQUIRED';
     let finalDecisionReason = 'Insufficient evidence for automatic decision.';
 
     if (operatingMode === 'PILOT') {
       finalDecision = 'REVIEW_REQUIRED';
       finalDecisionReason = 'PILOT mode: All inspections require manager review before acceptance.';
-    } else if (barcodeMatch && photoCount >= 4 && !allUncertain) {
+    } else if (barcodeMatch && (photos || []).length >= 4 && !allUncertain) {
       finalDecision = 'ACCEPT';
       finalDecisionReason = 'Barcode verified, sufficient evidence collected, no critical issues detected.';
     } else if (!barcodeMatch && expectedGTIN) {
       finalDecision = 'EXCEPTION';
-      finalDecisionReason = 'Scanned barcode does not match expected GTIN. Shipment requires investigation.';
+      finalDecisionReason = 'Scanned barcode does not match expected GTIN.';
     }
 
-    // Persist to Supabase if configured
     if (inspectionId && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
       try {
-        await supabase.from('inspections').update({
-          status: finalDecision,
-          final_decision: finalDecision,
-          final_decision_reason: finalDecisionReason,
-          completed_at: new Date().toISOString(),
-        }).eq('id', inspectionId);
-      } catch (dbErr) {
-        console.warn('Could not persist to Supabase:', dbErr);
-      }
+        const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
+        await supabase.from('inspections').update({ status: finalDecision, final_decision: finalDecision, final_decision_reason: finalDecisionReason, completed_at: new Date().toISOString() }).eq('id', inspectionId);
+      } catch (dbErr) { console.warn('Could not persist to Supabase:', dbErr); }
     }
 
     return res.json({
       success: true,
       rulesOutput: {
-        finalDecision,
-        finalDecisionReason,
-        checks: geminiObservations.map((o: any) => ({
-          check_name: o.checkName,
-          status: o.certainty === 'HIGH' ? 'PASS' : 'UNCERTAIN',
-          observed_value: o.observedValue,
-          confidence: o.confidence,
-          reason: o.reason,
-        })),
+        finalDecision, finalDecisionReason,
+        checks: geminiObservations.map((o: any) => ({ check_name: o.checkName, status: o.certainty === 'HIGH' ? 'PASS' : 'UNCERTAIN', observed_value: o.observedValue, confidence: o.confidence, reason: o.reason })),
         observedCounts: { cartonCount: manualCartonCount || 1, unitsPerCarton: null, totalQuantity: null },
       },
-      geminiObservations,
-      damageIssues,
-      photoQualityIssues,
-      actionRecommendation: finalDecision === 'ACCEPT'
-        ? 'Accept shipment into inventory.'
-        : finalDecision === 'EXCEPTION'
-        ? 'Quarantine affected carton(s), preserve evidence, and initiate supplier review.'
-        : 'Do not accept automatically. Request manager verification.',
+      geminiObservations, damageIssues, photoQualityIssues,
+      actionRecommendation: finalDecision === 'ACCEPT' ? 'Accept shipment into inventory.' : finalDecision === 'EXCEPTION' ? 'Quarantine affected carton(s) and initiate supplier review.' : 'Request manager verification.',
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Analysis failed';
-    return res.status(500).json({ error: message });
+    return res.status(500).json({ error: err instanceof Error ? err.message : 'Analysis failed' });
   }
 }
