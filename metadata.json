@@ -1,0 +1,1 @@
+{"name":"Remix Remix RECEIVEAI - Warehouse Receiving Manager ","description":"Enterprise AI-powered warehouse Receiving Manager backend on Supabase with PostgreSQL migrations, Storage policies, RLS, Deno Edge Functions, deterministic rules engine, and Gemini image verification.","requestFramePermissions":["camera"],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}
