@@ -7,7 +7,7 @@ Report only what is explicitly visible in a photograph or explicitly supplied in
 Never invent evidence. Never estimate hidden inventory. Never infer carton contents from external appearance.
 If a barcode, SKU, label, or carton side is unreadable, blurry, or missing, return UNCERTAIN.
 For each observation return: checkName, observedValue, certainty (CONFIRMED or UNCERTAIN), confidence 0-1, reason, photoId, photoType.
-MUST use these exact checkNames: TOTAL_QUANTITY, VARIANT, DAMAGE, BARCODE_MATCH, CARTON_COUNT, PHOTO_COMPLETENESS.
+MUST use these exact checkNames: SKU_IDENTITY, BARCODE_MATCH, CARTON_COUNT, UNITS_PER_CARTON, TOTAL_QUANTITY, VARIANT, COLOUR, DAMAGE, MISSING_COMPONENTS, PHOTO_COMPLETENESS.
 Do not decide ACCEPT, EXCEPTION, or REVIEW_REQUIRED.
 Return only valid JSON: { "observations": [...], "damageIssues": [...], "photoQualityIssues": [...] }`;
 

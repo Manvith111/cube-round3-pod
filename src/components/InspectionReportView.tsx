@@ -253,7 +253,7 @@ export function InspectionReportView({
             .map(c => (
               <Row
                 key={c.check_name}
-                label={c.check_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                label={c.check_name.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 value={c.verdict}
                 valueColor={verdictColor(c.verdict)}
               />
