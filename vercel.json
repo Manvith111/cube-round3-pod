@@ -4,7 +4,7 @@
   "framework": null,
   "rewrites": [
     { "source": "/api/launch-readiness", "destination": "/api/launch-readiness" },
-    { "source": "/api/analyze-inspection", "destination": "/api/analyze-inspection" },
+    { "source": "/api/inspections/analyze", "destination": "/api/analyze-inspection" },
     { "source": "/api/storage/upload", "destination": "/api/storage/upload" },
     { "source": "/api/manager/override", "destination": "/api/manager/override" },
     { "source": "/(.*)", "destination": "/index.html" }
