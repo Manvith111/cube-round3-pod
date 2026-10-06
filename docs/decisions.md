@@ -76,4 +76,23 @@ A contradiction between documents or data is a **finding**, not a failure. Open 
 
 ## Your Pod's decisions
 
-_Add entries below._
+### D-100 · Prep Manager integrated as a Python port (not HTTP), AI-observes/rules-decide preserved
+- Date / Owner: 2026-10-06 / @Manvith111 (Prep)
+- Context: the Round 2 Prep agent (OpsConsole) is TypeScript/Next.js; the orchestrator runs agents in-process Python by default and there is no reachable deploy URL yet.
+- Options considered: (A) keep the TS app and call it over HTTP (mode:"http") — needs a live deploy; (B) port the decision design to in-process Python; (C) placeholder.
+- Decision: (B). Ported faithfully — FBA v1 rule pack (`agents/prep/rules.py`), the Gemini observation prompt (`agents/prep/vision.py`), and the deterministic engine (`evaluate` in `agents/prep/app.py`). One batched model call per unit.
+- Why: in-process is runnable end-to-end in the Pod repo today and testable offline; HTTP can be revisited once the app is deployed (just flip `mode` + `url`).
+- Consequences: easier `make run`; the TS and Python prep logic must now be kept in sync. Revisit if we deploy the TS app.
+
+### D-101 · Prep verdicts reduced to the contract's PASS/FAIL/UNCERTAIN
+- Decision: the Round 2 5-value verdict (adds NOT_APPLICABLE, NOT_VERIFIABLE) is reduced to the envelope's three. NOT_APPLICABLE and NOT_VERIFIABLE checks are omitted from `checks[]` and surfaced in `payload.manual_checks_required` (e.g. `bag_thickness_material`, which no photo can verify).
+- Why: the Evidence Contract `verdict` enum is `PASS|FAIL|UNCERTAIN`; dropping would lose information, so non-verdict checks move to payload rather than disappearing.
+
+### D-102 · Prep is camera-only; `payload.measurements` is null (finding F-07)
+- Decision: Prep does not physically measure weight/dimensions, so `payload.measurements` is `null`, honestly. This means Recovery cannot source weight-tier fee evidence from Prep for now.
+- Why: honesty rule — we only report what we captured. Revisit if we add a scale/dimensioning capture; the field is already in the contract for it.
+
+### D-103 · Starter tests that encode stub CSV outcomes will be re-based on Pod fixtures
+- Context: plugging in the real Prep agent (which is correctly UNCERTAIN offline, with no API key / no photos) changes outcomes that several starter tests hard-code from the organiser stub's CSV replay.
+- Decision: NOT weakened. On the `test` branch the following fail until re-based on our own fixtures / a configured key: `test_examples.py` (happy-path, end-to-end), `test_agent_contracts.py::test_recovery_honours_overrides_of_previous_evidence`, `test_end_to_end.py::test_claim_names_amount_and_cites_evidence`. The contract, tenancy and idempotency tests PASS against the real agent. (Separately, `test_captures_in_data_input...` and `test_http::test_dead_agent...` already fail on the pristine starter in this Python 3.10 / live-server environment — not caused by this change.)
+- Why: honesty rule — "a stub passing is not your agent passing"; fixtures will be regenerated with real captures once the Pod aligns.

@@ -1,10 +1,10 @@
 {
   "stage": "prep",
-  "agent_id": "prep-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "prep-manager@3.0.0",
+  "owner": "@Manvith111",
   "mode": "inproc",
   "url": "http://localhost:8102",
   "module": "agents.prep.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Real Prep Manager (ported from Round 2 OpsConsole). AI-observes/rules-decide: Gemini vision describes what is visible, a deterministic engine emits PASS/FAIL/UNCERTAIN per FBA prep clause (rules.py). One batched model call per unit; fails open to UNCERTAIN when vision is unavailable.",
+  "notes": "In-process Python port. Set GEMINI_API_KEY (or GOOGLE_API_KEY) for live vision; without a key the agent still runs and returns honest UNCERTAIN records. Optional PREP_MODEL env overrides the Gemini model (default gemini-2.5-flash)."
 }
