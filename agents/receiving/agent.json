@@ -1,10 +1,10 @@
 {
   "stage": "receiving",
-  "agent_id": "receiving-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "receiving-agent@1",
+  "owner": "https://github.com/PavaniPatluri",
   "mode": "inproc",
   "url": "http://localhost:8101",
   "module": "agents.receiving.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Real Round 2 Receiving Agent calling Gemini-2.0-flash",
+  "notes": "Ported from JS/React to Python inproc to seamlessly integrate with test orchestrator."
 }
