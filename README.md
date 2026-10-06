@@ -1,5 +1,8 @@
 # DockProof AI — Smart Receiving Verification Platform
 
+**Live Deployment:** [https://dockproof-ai.vercel.app](https://dockproof-ai.vercel.app)
+
+
 ## 1. Problem Understanding
 Warehouse receiving docks face a high volume of inbound shipments that require meticulous inspection. Manual inspection is slow, prone to human error, and lacks verifiable evidence. Operators often fail to capture proper photographic evidence, misread barcodes, or accept damaged/incorrect variants due to fatigue or time constraints. When discrepancies arise later, there is rarely an immutable, visual audit trail linking the physical condition of the goods at the dock to the purchase order.
 
