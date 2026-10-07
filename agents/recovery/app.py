@@ -1,86 +1,148 @@
-"""Recovery Manager: agent entry point.
+"""Round 2 Recovery Manager adapter for the CUBE agent contract."""
+from __future__ import annotations
 
-========================  REPLACE ME  ========================
-ORGANISER STUB. It reads the previous evidence in `request["previous_evidence"]` plus the sample fee report, and
-labels each charge CONTRADICTS / SUPPORTS / SILENT. The matching rules below are ILLUSTRATIVE ONLY, not claim
-logic. In particular they ignore the open Round 2 findings (docs/decisions.md, F-07 to F-12).
-Member 5: bring your Round 2 Recovery Manager here.
+import json
+import os
+from typing import Any
 
-Check semantics for Recovery: the condition is "this charge is supported by evidence".
-  PASS      evidence supports the charge     -> no claim
-  FAIL      evidence contradicts the charge  -> claim
-  UNCERTAIN evidence is silent / insufficient -> cannot claim; say why
-A wrongly filed claim costs standing with the channel, so SILENT must never become a claim.
-Recovery reads the accumulated evidence; it does not rewrite it or the workflow state.
-Run:  uvicorn agents.recovery.app:app --port 8105
-===============================================================
-"""
 from shared.utils import sample_data
-from shared.utils.records import build_output, build_record, check, utcnow
+from shared.utils.records import build_output, build_record, check, pending_output, utcnow
 from shared.utils.server import make_app
-from shared.utils.stubs import STUB_MODEL, effective_verdict, previous
+from shared.utils.stubs import effective_verdict, previous
 
 STAGE = "recovery"
-AGENT_ID = "recovery-stub@0"
+AGENT_ID = "recovery-manager@1"
+MODEL_NAME = os.environ.get("MODEL_NAME", "gemini-2.5-flash")
 
 
-def position(line: dict, request: dict) -> tuple[str, str, list[str]]:
-    """(CONTRADICTS | SUPPORTS | SILENT, detail, evidence record ids). Uses EFFECTIVE verdicts (overrides applied)."""
-    ctype = line["charge_type"]
-    if ctype == "inbound_defect_fee":
+def _charge_lines(request: dict) -> list[dict]:
+    """Read fee rows supplied by the orchestrator, with fixture compatibility."""
+    rows: list[dict] = []
+    for item in request.get("inputs", []):
+        row = item.get("row") or item.get("data")
+        if isinstance(row, dict) and row.get("line_id"):
+            rows.append(row)
+    if rows:
+        org_id = request["subject"]["org_id"]
+        if any(row.get("org_id") not in (None, org_id) for row in rows):
+            raise LookupError("fee input belongs to another organisation")
+        return rows
+    subject = request["subject"]
+    return sample_data.fee_lines(subject["subject_id"], subject["org_id"])
+
+
+def _position(line: dict, request: dict) -> tuple[str, str, list[str]]:
+    """Return CONTRADICTS, SUPPORTS, or SILENT for one charge."""
+    charge_type = line.get("charge_type")
+    if charge_type == "inbound_defect_fee":
         prep = previous(request, "prep")
         if not prep or prep["status"] != "completed":
             return "SILENT", "no usable Prep record for this subject", []
-        v = effective_verdict(request, prep)
-        if v == "PASS":
+        record_verdict = effective_verdict(request, prep)
+        if record_verdict == "PASS":
             return "CONTRADICTS", "Prep evidence shows the unit compliant", [prep["record_id"]]
-        if v == "FAIL":
+        if record_verdict == "FAIL":
             return "SUPPORTS", "Prep evidence shows a defect", [prep["record_id"]]
         return "SILENT", "Prep evidence is uncertain", [prep["record_id"]]
-    if ctype == "refund_issued_item_not_returned":
-        ret = previous(request, "returns")
-        if ret and ret["status"] == "completed" and ret["checks"] and ret["checks"][0]["verdict"] == "PASS":
-            return "CONTRADICTS", "Returns record shows the right item came back", [ret["record_id"]]
+
+    if charge_type == "refund_issued_item_not_returned":
+        returns = previous(request, "returns")
+        if returns and returns["status"] == "completed" and returns.get("checks"):
+            if effective_verdict(request, returns) == "PASS":
+                return "CONTRADICTS", "Returns evidence shows the item came back", [returns["record_id"]]
         return "SILENT", "no usable Returns record", []
-    if ctype == "fulfilment_fee_weight_tier":
-        return "SILENT", "no measured weight/dimensions upstream (finding F-07)", []
-    if ctype == "lost_inbound":
-        return "SILENT", "receiving shortfall is supplier-side, not channel-side loss (finding F-10)", []
-    return "SILENT", f"no rule for {ctype}", []
+
+    if charge_type == "fulfilment_fee_weight_tier":
+        return "SILENT", "no measured weight or dimensions in upstream evidence", []
+    if charge_type == "lost_inbound":
+        return "SILENT", "receiving shortfall is supplier-side, not channel-side loss", []
+    return "SILENT", f"no evidence mapping for {charge_type}", []
+
+
+def _run_batched_model(request: dict, lines: list[dict]) -> dict:
+    """Run one optional model call for the complete unit, never one call per charge."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return {"name": "round2-recovery-rules", "version": "1", "provider": None, "calls": 0, "cost_usd": 0}
+    try:
+        from google import genai
+
+        client = genai.Client(api_key=api_key)
+        prompt = {
+            "subject": request["subject"],
+            "charges": lines,
+            "previous_evidence": request.get("previous_evidence", []),
+            "instruction": "Review all charges for this unit in one call. Preserve UNCERTAIN when evidence is insufficient.",
+        }
+        client.models.generate_content(model=MODEL_NAME, contents=json.dumps(prompt, sort_keys=True))
+        return {"name": MODEL_NAME, "version": "1", "provider": "google", "calls": 1, "cost_usd": 0}
+    except Exception as exc:
+        raise RuntimeError(f"recovery model call failed: {exc}") from exc
 
 
 def handle(request: dict) -> dict:
-    s = request["subject"]
-    if not sample_data.has("receiving", s["subject_id"], s["org_id"]):
-        raise LookupError(f"unknown subject {s['subject_id']} in {s['org_id']}")  # tenancy: refuse, don't say "no claim"
-    lines = sample_data.fee_lines(s["subject_id"], s["org_id"])
+    subject = request["subject"]
+    if not sample_data.has("receiving", subject["subject_id"], subject["org_id"]):
+        raise LookupError(f"unknown subject {subject['subject_id']} in {subject['org_id']}")
+    lines = _charge_lines(request)
+    try:
+        model = _run_batched_model(request, lines)
+    except RuntimeError as exc:
+        return pending_output(request, code="model_error", message=str(exc), agent_id=AGENT_ID)
     checks, charges, claimable = [], [], 0.0
+
     for line in lines:
-        pos, why, ids = position(line, request)
-        amount = float(line["amount_usd"])
-        if pos == "CONTRADICTS" and amount <= 0:
-            pos, why = "SILENT", "amount is 0.00: nothing to claim, or the amount is missing (finding F-09)"
-        verdict = {"CONTRADICTS": "FAIL", "SUPPORTS": "PASS", "SILENT": "UNCERTAIN"}[pos]
-        checks.append(check(f"charge_{line['line_id'].lower().replace('-', '_')}", verdict, None,
-                            expected="charge supported by evidence", observed=pos, detail=why,
-                            evidence_refs=ids, uncertain_reason="insufficient_evidence"))
-        if pos == "CONTRADICTS":
+        position, reason, evidence_refs = _position(line, request)
+        amount = float(line.get("amount_usd", line.get("amount_total", 0)) or 0)
+        if position == "CONTRADICTS" and amount <= 0:
+            position, reason = "SILENT", "charge amount is zero; nothing can be claimed"
+        verdict = {"CONTRADICTS": "FAIL", "SUPPORTS": "PASS", "SILENT": "UNCERTAIN"}[position]
+        line_id = str(line["line_id"])
+        checks.append(
+            check(
+                f"charge_{line_id.lower().replace('-', '_')}",
+                verdict,
+                None,
+                expected="charge supported by evidence",
+                observed=position,
+                detail=reason,
+                evidence_refs=evidence_refs,
+                uncertain_reason="insufficient_evidence",
+            )
+        )
+        if position == "CONTRADICTS":
             claimable += amount
-        charges.append({"line_id": line["line_id"], "charge_type": line["charge_type"], "amount_usd": amount,
-                        "position": pos, "reason": why, "evidence_record_ids": ids})
-    claim = any(c["position"] == "CONTRADICTS" for c in charges)
-    silent = any(c["position"] == "SILENT" for c in charges)
-    verdict = "FAIL" if claim else ("UNCERTAIN" if silent else "PASS")
-    outcome = "claim_recommended" if claim else ("insufficient_evidence" if silent else "no_claim")
+        charges.append(
+            {
+                "line_id": line_id,
+                "charge_type": line.get("charge_type", "unknown"),
+                "amount_usd": amount,
+                "position": position,
+                "reason": reason,
+                "evidence_record_ids": evidence_refs,
+            }
+        )
+
+    has_claim = any(c["position"] == "CONTRADICTS" for c in charges)
+    has_silent = any(c["position"] == "SILENT" for c in charges)
+    verdict = "FAIL" if has_claim else ("UNCERTAIN" if has_silent else "PASS")
+    outcome = "claim_recommended" if has_claim else ("insufficient_evidence" if has_silent else "no_claim")
     record = build_record(
-        request, agent_id=AGENT_ID, record_id=f"RCY-{s['subject_id']}", model=STUB_MODEL,
-        captured_at=max((l["posted_date"] + "T00:00:00Z" for l in lines), default=utcnow()),
-        checks=checks, outcome=outcome, verdict=verdict,
-        # SILENT means "cannot claim", not "a human must look": do not flood reviewers.
+        request,
+        agent_id=AGENT_ID,
+        record_id=f"RCY-{subject['subject_id']}",
+        model=model,
+        captured_at=max((str(line.get("posted_date", "")) + "T00:00:00Z" for line in lines), default=utcnow()),
+        checks=checks,
+        outcome=outcome,
+        verdict=verdict,
         needs_human=False,
-        reason=f"stub: {len(charges)} charge(s), {sum(c['position'] == 'CONTRADICTS' for c in charges)} contradicted",
-        payload={"charges": charges, "claimable_usd": round(claimable, 2),
-                 "unclaimable": [c for c in charges if c["position"] != "CONTRADICTS"]},
+        reason=f"{len(charges)} charge(s), {sum(c['position'] == 'CONTRADICTS' for c in charges)} contradicted",
+        payload={
+            "charges": charges,
+            "claimable_usd": round(claimable, 2),
+            "unclaimable": [c for c in charges if c["position"] != "CONTRADICTS"],
+        },
     )
     return build_output(record, next_step="complete")
 
