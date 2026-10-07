@@ -1,10 +1,10 @@
 {
   "stage": "pack",
-  "agent_id": "pack-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "pack-manager@2.0.0",
+  "owner": "@Shyamyemuka",
   "mode": "inproc",
   "url": "http://localhost:8103",
   "module": "agents.pack.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Gemini vision-language model (gemini-2.5-flash) observes an open box photo and reports item presence, quantity and unlisted items as structured JSON. A deterministic rules engine converts the observation into PASS/FAIL/UNCERTAIN per check_key. Falls back to CSV replay when no images are supplied (test/stub mode). Ported from Round 2 repo: https://github.com/Shyamyemuka/cube26-pck-0105-shyamyemuka",
+  "notes": "Requires GEMINI_API_KEY env var for the real (vision) path. Without it, the agent replays Round 2 sample CSV data and tests pass."
 }
