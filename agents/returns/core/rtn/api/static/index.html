@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RTN — Returns Manager Agent</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RTN — Returns Manager Agent</h1>
+    <p class="subtitle">Upload order info + reference/returned photos. One batched VLM call computes identity, completeness, condition, and disposition via deterministic policy rules.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel form-panel">
+      <h2>1. Order &amp; Images</h2>
+      <form id="evalForm">
+        <fieldset>
+          <legend>Order info</legend>
+          <label>Subject / RMA ID
+            <input type="text" name="subject" value="RMA-DEMO-0001" required />
+          </label>
+          <label>SKU
+            <input type="text" name="sku" value="SKU-DEMO-001" required />
+          </label>
+          <label>ASIN (optional)
+            <input type="text" name="asin" />
+          </label>
+          <label>Product name
+            <input type="text" name="product_name" value="Demo Product" required />
+          </label>
+          <label>Product description (optional)
+            <textarea name="product_description" rows="2"></textarea>
+          </label>
+          <label>Organization ID
+            <input type="text" name="organization_id" value="org-demo" required />
+          </label>
+          <label>Client ID
+            <input type="text" name="client_id" value="client-demo" required />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Expected components</legend>
+          <div id="componentsList"></div>
+          <button type="button" id="addComponentBtn" class="secondary-btn">+ Add expected component</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Reference / catalogue images (expected appearance)</legend>
+          <input type="file" name="reference_files" id="referenceFiles" accept="image/*" multiple />
+          <div class="preview-row" id="referencePreview"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Returned item photos (what the customer sent back)</legend>
+          <input type="file" name="returned_files" id="returnedFiles" accept="image/*" multiple />
+          <div class="preview-row" id="returnedPreview"></div>
+        </fieldset>
+
+        <button type="submit" id="submitBtn" class="primary-btn">Run RTN pipeline</button>
+      </form>
+      <div id="statusLine" class="status-line"></div>
+    </section>
+
+    <section class="panel results-panel">
+      <h2>2. Evidence Record</h2>
+      <div id="resultsEmpty" class="empty-state">Submit a unit to see the evidence record here.</div>
+      <div id="resultsContent" class="hidden"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,10 +1,10 @@
 {
   "stage": "returns",
-  "agent_id": "returns-stub@0",
-  "owner": "@github-handle-of-the-owner",
+  "agent_id": "returns-manager@1.0.0",
+  "owner": "@Srikar-segmentation-fault",
   "mode": "inproc",
   "url": "http://localhost:8104",
   "module": "agents.returns.app",
-  "implementation": "organiser-stub",
-  "notes": "Set mode to \"http\" if your agent is not Python or runs as its own service. Change implementation to a short honest description of what you built."
+  "implementation": "Real VLM agent when photos and key exist; otherwise a labelled CSV replay for sample units. Real path: one batched OpenAI-compatible vision call per unit (reference_* and returned_* photos), then deterministic Round 2 rules grade condition on Amazon's published scale and pick a disposition. The real model path has only been tested with a fake model, NOT against a live API. Photos but no key or a model error: a pending record. No photos: a replay of the sample CSV row (model.name csv-replay, calls 0) that copies the operator's disposition and is not this agent's judgment.",
+  "notes": "Python, in-process. Round 2 code is in core/rtn/ (import paths only changed). Real path needs VLM_API_KEY and the packages openai, pydantic-settings, tenacity, python-dotenv (imported lazily; see INTEGRATION-NOTES.md). Condition-to-verdict mapping is provisional, pending Pod confirmation (F-11)."
 }

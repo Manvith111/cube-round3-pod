@@ -1,0 +1,53 @@
+{
+  "doc_id": "amazon_condition_scale",
+  "doc_version": "2026-09-26",
+  "source": {
+    "title": "Marketplace Items Condition Guidelines / Amazon Resale: Understanding Product Conditions",
+    "publisher": "Amazon.com Customer Service Help",
+    "urls": [
+      "https://www.amazon.com/gp/help/customer/display.html?nodeId=202074290",
+      "https://www.amazon.com/gp/help/customer/display.html?nodeId=T7T34PC4e13psS1NjJ",
+      "https://www.amazon.com/gp/help/customer/display.html?nodeId=TD36hbsFWCZlvThHpK"
+    ],
+    "retrieved_on": "2026-09-26",
+    "note": "This file is a retrieved reference document, injected verbatim into the VLM prompt at call time. It is not memorized by the model and must not be edited to match model output. Update doc_version and re-cite if Amazon's published guidelines change."
+  },
+  "evaluation_dimensions": [
+    "functionality",
+    "cosmetic_damage",
+    "accessories_completeness",
+    "packaging_condition"
+  ],
+  "conditions": [
+    {
+      "code": "NEW",
+      "label": "New",
+      "definition": "An item that is brand new, unused, unopened, and undamaged in its original packaging. Original manufacturer's warranty, if any, still applies."
+    },
+    {
+      "code": "USED_LIKE_NEW",
+      "label": "Used - Like New / Open Box",
+      "definition": "An item in perfect working condition. Original protective wrapping may be missing, but the original packaging is intact and in good condition with minor damage possible. Instructions are included. No scratches or scuffs are visible. All essential accessories are complete."
+    },
+    {
+      "code": "USED_VERY_GOOD",
+      "label": "Used - Very Good",
+      "definition": "A well-cared-for item that has seen limited use and remains in good working condition. The item may show some limited signs of wear such as small scratches or cosmetic blemishes. Item may arrive with damaged packaging or be repackaged, and could be missing some non-essential accessories."
+    },
+    {
+      "code": "USED_GOOD",
+      "label": "Used - Good",
+      "definition": "An item that shows clear signs of usage but still fully serves its main function. The item may have moderate cosmetic damage or other signs of previous use, such as scratches, dents, or worn corners. Item may arrive with damaged packaging or be repackaged, and could be missing some accessories."
+    },
+    {
+      "code": "USED_ACCEPTABLE",
+      "label": "Used - Acceptable",
+      "definition": "The item is fairly worn but continues to function properly. Item may arrive with damaged packaging or be repackaged. Signs of wear can include aesthetic issues such as scratches, dents, and worn corners. The item may have identifying markings on it or show other signs of previous use. This is the lowest condition tier at which the item remains fully functional and sellable as used."
+    }
+  ],
+  "below_acceptable": {
+    "code": "UNSELLABLE",
+    "label": "Below Acceptable (not an Amazon resale grade)",
+    "definition": "Not part of Amazon's published resale scale. Used internally by the RTN policy engine when observed structural damage, missing essential parts, or functional failure fall below the functional/safety floor required for 'Used - Acceptable'. Items graded UNSELLABLE are never listed for resale as-is; they are routed to REFURBISH, LIQUIDATE, or DISPOSE by the disposition rules."
+  }
+}
