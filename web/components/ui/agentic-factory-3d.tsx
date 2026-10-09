@@ -96,34 +96,6 @@ export default function AgenticFactory3D({
         aria-label="Interactive 3D commerce pipeline with five stations: Receiving, Prep, Pack, Returns, and Recovery."
       />
 
-      {/* Floating Status / Integration Badge */}
-      <div className="pipeline-floating-banner debug-ui">
-        {pipelineState === 'completed' ? (
-          <div className="complete-badge animate-fade-in">
-            <span className="badge-icon">✓</span>
-            <div>
-              <strong>Complete Integration</strong>
-              <small>All 5 agent invariants verified across the workflow</small>
-            </div>
-            <button
-              type="button"
-              onClick={handleRestart}
-              className="replay-btn"
-            >
-              Replay Trace
-            </button>
-          </div>
-        ) : (
-          <div className="live-badge">
-            <span className="live-dot" />
-            <div>
-              <strong>Sequential Pipeline Active</strong>
-              <small>Current Station: {activeStageName}</small>
-            </div>
-          </div>
-        )}
-      </div>
-
       <div id="tooltip" role="tooltip">
         <strong />
         <p />
@@ -1144,6 +1116,14 @@ function initMachineScene(
     }
 
     function focusStation(id: string) {
+      const idx = STAGE_STOPS.findIndex((s) => s.id === id);
+      if (idx !== -1) {
+        currentStageIndex = idx;
+        stageTimer = 0;
+        isMoving = false;
+        moveProgress = 0;
+        options.onStageChange?.(STAGE_STOPS[idx].name);
+      }
       const s = stations.find((s) => s.id === id);
       if (!s) return false;
       selected = id;

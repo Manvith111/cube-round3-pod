@@ -553,7 +553,7 @@ export default function PipelineTracePage() {
   }, [currentRun, historyRuns]);
 
   return (
-    <div className="space-y-10 pb-16 max-w-7xl mx-auto">
+    <div className="space-y-10 pb-16 w-full max-w-[1600px] mx-auto px-[10px]">
       {/* HEADER / BACK NAVIGATION */}
       <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-4">
         <Link
@@ -973,62 +973,63 @@ export default function PipelineTracePage() {
         </div>
       )}
 
-      {/* 3D INTERACTIVE PIPELINE MACHINE (AgenticFactory3D) */}
-      <div className="w-full space-y-3">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h3 className="font-display font-extrabold text-sm text-slate-900 tracking-tight">
-              3D Interactive Pipeline Machine
-            </h3>
-            <span className="text-[10px] font-mono font-bold uppercase text-[#773C30] px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200">
-              Overview Mode
-            </span>
-          </div>
-          <span className="text-[11px] font-mono text-slate-500">
-            Rotate & zoom to explore • Click any of the 5 stations to inspect
-          </span>
+      {/* SYNCHRONIZED ROW: COMMERCE EVIDENCE PIPELINE (LEFT) + CONDENSED 3D MACHINE (RIGHT) */}
+      <div className="w-full flex flex-col xl:flex-row items-stretch gap-[10px] pl-[6px] pr-[6px]">
+        {/* Left: Commerce Evidence Pipeline (Pushed to utmost left with 10px margin) */}
+        <div className="w-full xl:flex-[1.2] min-w-0">
+          <BuildPipeline
+            runs={allPipelineRuns}
+            title="Commerce Evidence Pipeline"
+            subtitle="Multi-agent verification from inbound receiving to channel loss recovery."
+            selectedRunId={currentRun.id}
+            onRunChange={(run) => {
+              const hist = historyRuns.find((h, idx) => {
+                const baseId = h.unit_id || `RUN-${idx + 1}`;
+                return run.id === baseId || run.id.startsWith(`${baseId}-HIST-`);
+              });
+              if (hist && hist.data) {
+                setPipelineData(hist.data);
+                setSelectedStageDetail(hist.route === 'mfn' ? 'pack' : 'receiving');
+              }
+            }}
+            onStageSelect={(stage) => {
+              setSelectedStageDetail(stage.id);
+            }}
+            onRerun={() => {
+              handleRun();
+            }}
+            busyRunId={isRunning ? currentRun.id : null}
+            rerunLabel="Execute Pipeline"
+          />
         </div>
 
-        <AgenticFactory3D
-          height="520px"
-          activeStation={selectedStageDetail}
-          onStation={(id) => {
-            if (id === 'receiving') setSelectedStageDetail('receiving');
-            else if (id === 'prep') setSelectedStageDetail('prep');
-            else if (id === 'pack') setSelectedStageDetail('pack');
-            else if (id === 'returns') setSelectedStageDetail('returns');
-            else if (id === 'recovery') setSelectedStageDetail('recovery');
-          }}
-        />
-      </div>
+        {/* Right: Condensed 3D Interactive Pipeline Machine (Strictly in sync with running/selected stage) */}
+        <div className="w-full xl:flex-[0.8] min-w-0 rounded-3xl neu-flat bg-white/75 p-3 flex flex-col justify-between border border-[var(--neu-border-color)]">
+          <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-[var(--neu-border-color)]">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <h3 className="font-display font-extrabold text-xs text-slate-900 tracking-tight">
+                3D Machine Trace
+              </h3>
+              <span className="text-[9px] font-mono font-bold uppercase text-[#773C30] px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200">
+                {currentRunningStage ? `Active: ${currentRunningStage}` : `Station: ${selectedStageDetail || 'Receiving'}`}
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-slate-400">
+              Interactive 3D Sync
+            </span>
+          </div>
 
-      {/* 3D ISOMETRIC / LIST VIEW GLASSMORPHIC BUILD PIPELINE */}
-      <div className="w-full">
-        <BuildPipeline
-          runs={allPipelineRuns}
-          title="Commerce Evidence Pipeline"
-          subtitle="Multi-agent verification from inbound receiving to channel loss recovery."
-          selectedRunId={currentRun.id}
-          onRunChange={(run) => {
-            const hist = historyRuns.find((h, idx) => {
-              const baseId = h.unit_id || `RUN-${idx + 1}`;
-              return run.id === baseId || run.id.startsWith(`${baseId}-HIST-`);
-            });
-            if (hist && hist.data) {
-              setPipelineData(hist.data);
-              setSelectedStageDetail(hist.route === 'mfn' ? 'pack' : 'receiving');
-            }
-          }}
-          onStageSelect={(stage) => {
-            setSelectedStageDetail(stage.id);
-          }}
-          onRerun={() => {
-            handleRun();
-          }}
-          busyRunId={isRunning ? currentRun.id : null}
-          rerunLabel="Execute Pipeline"
-        />
+          <div className="flex-1 min-h-[440px] flex items-center justify-center">
+            <AgenticFactory3D
+              height="450px"
+              activeStation={currentRunningStage || selectedStageDetail}
+              onStation={(id) => {
+                setSelectedStageDetail(id);
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Narrative Flow Banner */}

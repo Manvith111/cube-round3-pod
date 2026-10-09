@@ -1,6 +1,13 @@
-import React from 'react';
-import AgenticFactory3D from '@/components/ui/agentic-factory-3d';
+"use client";
 
-export default function AgenticFactory3DDemo() {
-  return <AgenticFactory3D height="100vh" />;
-}
+import { BackgroundPixelStars } from "@/components/ui/background-pixel-stars";
+
+const Default = () => {
+  return (
+    <div className="h-dvh w-dvw bg-white bg-[size:10px]">
+      <BackgroundPixelStars />
+    </div>
+  );
+};
+
+export default Default;
