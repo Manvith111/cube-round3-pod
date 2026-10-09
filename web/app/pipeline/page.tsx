@@ -424,9 +424,9 @@ export default function PipelineTracePage() {
         let bpStatus: StageStatus = "queued";
         if (status === "running") bpStatus = "running";
         else if (status === "skipped") bpStatus = "skipped";
-        else if (status === "fail") bpStatus = "failed";
+        else if (status === "fail" || status === "error") bpStatus = "failed";
         else if (status === "pass" || status === "completed_anim") bpStatus = "passed";
-        else if (status === "uncertain") bpStatus = "passed";
+        else if (status === "uncertain") bpStatus = "failed";
         else if (status === "idle" || status === "pending") bpStatus = "queued";
 
         const logs: PipelineLog[] = [];
@@ -1019,6 +1019,30 @@ export default function PipelineTracePage() {
         </div>
       </div>
 
+      {/* Exception / Halted State Alert Banner (DEMO Criterion 5 & 6) */}
+      {pipelineData?.workflow?.halted && (
+        <div className="rounded-2xl neu-flat bg-amber-50/90 border border-amber-300 p-5 text-xs font-mono text-amber-900 shadow-sm flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-none mt-0.5" />
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-950 block font-display text-sm">
+                Workflow Halted: Stage [{pipelineData.workflow.halted.stage?.toUpperCase()}] Exception / UNCERTAIN
+              </span>
+              <span className="px-2 py-0.5 rounded bg-amber-200/80 font-bold text-[10px] text-amber-900 uppercase">
+                Status: {pipelineData.workflow.status}
+              </span>
+            </div>
+            <p className="text-amber-800 leading-relaxed font-sans text-xs">
+              <strong>Halt Reason: </strong>{pipelineData.workflow.halted.reason}
+            </p>
+            <div className="text-[11px] text-amber-700 pt-1 border-t border-amber-200/60 flex items-center justify-between">
+              <span>Halted At: {new Date(pipelineData.workflow.halted.at).toLocaleString()}</span>
+              <span>Requires operator override or resolution to advance.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Narrative Flow Banner */}
       {pipelineData?.workflow?.final_outcome && (
         <div className="rounded-2xl neu-flat bg-white/80 p-5 text-xs font-mono text-slate-800 border-l-4 border-emerald-600 shadow-xs flex items-start gap-3">
@@ -1128,6 +1152,18 @@ export default function PipelineTracePage() {
                     <span className="font-bold block mb-1 text-slate-500">Decision Rationale:</span>
                     {selectedEvidence.decision?.reason || 'Evaluation completed according to contract rules.'}
                   </div>
+
+                  {(selectedStageResult?.error || (selectedEvidence as any).error) && (
+                    <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] space-y-1">
+                      <div className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-rose-900">
+                        <AlertTriangle className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Recorded Agent Fault: {(selectedStageResult?.error || (selectedEvidence as any).error)?.code || 'EXECUTION_ERROR'}</span>
+                      </div>
+                      <p className="font-mono text-[10px] leading-tight break-all">
+                        {(selectedStageResult?.error || (selectedEvidence as any).error)?.message || 'Agent fault encountered and recorded.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-2xl neu-pressed-sm p-4 space-y-2 text-xs">
