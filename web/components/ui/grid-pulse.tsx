@@ -160,7 +160,8 @@ export function GridPulse({
         if (nearest === 0) break;
       }
       if (nearest === Number.POSITIVE_INFINITY) return 1;
-      return FAINT + (1 - FAINT) * Math.min(1, nearest / (FADE * cell));
+      // Glow directly behind text is softened to 0.38 for maximum text legibility, then ramps smoothly to 1.0 outside
+      return 0.38 + 0.62 * Math.min(1, nearest / (FADE * cell));
     };
 
     const ink = (row: number) => {
@@ -187,7 +188,7 @@ export function GridPulse({
           }
           alpha = 1 - easeIn(t);
         }
-        ctx.globalAlpha = Math.max(0, Math.min(1, alpha * c.dim * 0.35));
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha * c.dim * 0.45));
         ctx.fillStyle = c.colour;
         // Inset by the hairline, so the grid still shows between lit cells.
         ctx.fillRect(c.col * cell + 1, c.row * cell + 1, cell - 1, cell - 1);
@@ -208,7 +209,6 @@ export function GridPulse({
       const lit = cells.get(key);
       if (lit && now < lit.until) return;
       const dim = brightness(col, row);
-      if (dim <= 0.05) return; // Do not light if directly under text
       let born = now;
       if (lit) {
         const faded = 1 - easeIn(Math.min(1, (now - lit.until) / FADE_OUT));

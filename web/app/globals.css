@@ -196,25 +196,25 @@ html.dark .hl-highlight {
   text-shadow: none;
 }
 
-/* Light Mode Button Highlighter: Clear Vermilion & Shrimp Brown */
+/* Sleek Action Button Highlighter: Modern Tech Obsidian */
 html:not(.dark) .neu-btn-highlight {
-  background: linear-gradient(135deg, #B91C1C 0%, #773C30 50%, #380C14 100%);
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0F172A 100%);
   color: #FFFFFF !important;
-  font-weight: 800;
-  box-shadow: 0 6px 20px rgba(119, 60, 48, 0.32), 4px 4px 10px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.25s ease-out;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), 0 2px 6px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease-out;
 }
 
 html:not(.dark) .neu-btn-highlight:hover {
-  background: linear-gradient(135deg, #DC2626 0%, #8C4739 50%, #4A121D 100%);
+  background: linear-gradient(135deg, #1E293B 0%, #334155 55%, #1E293B 100%);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(119, 60, 48, 0.42), 5px 5px 14px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3), 0 4px 10px rgba(15, 23, 42, 0.15);
 }
 
 html:not(.dark) .neu-btn-highlight:active {
   transform: translateY(1px);
-  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* Dark Mode Button Highlighter: Bamboo Haze / Pine Leaf */

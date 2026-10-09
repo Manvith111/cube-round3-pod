@@ -502,13 +502,18 @@ export default function PipelineTracePage() {
 
   const allPipelineRuns: PipelineRun[] = React.useMemo(() => {
     const runsList: PipelineRun[] = [currentRun];
+    const seenIds = new Set<string>([currentRun.id]);
+
     if (historyRuns && historyRuns.length > 0) {
       historyRuns.forEach((h, idx) => {
-        if (h.unit_id === currentRun.id && pipelineData) {
-          return;
+        let runId = h.unit_id ? `${h.unit_id}` : `RUN-${idx + 1}`;
+        if (seenIds.has(runId)) {
+          runId = `${runId}-HIST-${idx + 1}`;
         }
+        seenIds.add(runId);
+
         runsList.push({
-          id: h.unit_id ? `${h.unit_id}` : `RUN-${idx + 1}`,
+          id: runId,
           branch: `${(h.route || 'mfn').toUpperCase()} Route · ${h.org_id || 'demo'}`,
           commit: h.unit_id || `RUN-${idx + 1}`,
           startedAt: h.timestamp || new Date().toISOString(),
@@ -545,7 +550,7 @@ export default function PipelineTracePage() {
       });
     }
     return runsList;
-  }, [currentRun, historyRuns, pipelineData]);
+  }, [currentRun, historyRuns]);
 
   return (
     <div className="space-y-10 pb-16 max-w-7xl mx-auto">
@@ -942,7 +947,7 @@ export default function PipelineTracePage() {
                         <span>•</span>
                         <span>Stages: <strong>{hist.stage_count}</strong></span>
                       </div>
-                      <div className="text-[10px] font-mono text-slate-400">
+                      <div className="text-[10px] font-mono text-slate-400" suppressHydrationWarning>
                         {new Date(hist.timestamp).toLocaleString()}
                       </div>
                     </div>
@@ -1006,7 +1011,10 @@ export default function PipelineTracePage() {
           subtitle="Multi-agent verification from inbound receiving to channel loss recovery."
           selectedRunId={currentRun.id}
           onRunChange={(run) => {
-            const hist = historyRuns.find((h) => h.unit_id === run.id || `RUN-${historyRuns.indexOf(h) + 1}` === run.id);
+            const hist = historyRuns.find((h, idx) => {
+              const baseId = h.unit_id || `RUN-${idx + 1}`;
+              return run.id === baseId || run.id.startsWith(`${baseId}-HIST-`);
+            });
             if (hist && hist.data) {
               setPipelineData(hist.data);
               setSelectedStageDetail(hist.route === 'mfn' ? 'pack' : 'receiving');

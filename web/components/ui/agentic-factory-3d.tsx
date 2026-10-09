@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -13,12 +13,14 @@ export type AgenticFactory3DProps = {
   /** Height of the scene box, e.g. 520, 640 or '100vh'. Default '520px'. */
   height?: number | string;
   className?: string;
-  /** Clean hero mode: no panels, the machine on the right of a wide frame. */
+  /** Clean hero mode */
   embed?: boolean;
   /** Active selected station ID */
   activeStation?: string | null;
   /** Callback when a station is clicked */
   onStation?: (id: StationId) => void;
+  /** Callback when the full pipeline run completes */
+  onPipelineComplete?: () => void;
   /** The first real frame is drawn */
   onReady?: () => void;
 };
@@ -29,13 +31,17 @@ export default function AgenticFactory3D({
   embed = false,
   activeStation,
   onStation,
+  onPipelineComplete,
   onReady,
 }: AgenticFactory3DProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const handlers = useRef({ onStation, onReady });
+  const handlers = useRef({ onStation, onPipelineComplete, onReady });
+  const [pipelineState, setPipelineState] = useState<'running' | 'completed'>('running');
+  const [activeStageName, setActiveStageName] = useState<string>('Receiving');
+
   useEffect(() => {
-    handlers.current = { onStation, onReady };
-  }, [onStation, onReady]);
+    handlers.current = { onStation, onPipelineComplete, onReady };
+  }, [onStation, onPipelineComplete, onReady]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -48,6 +54,11 @@ export default function AgenticFactory3D({
       dispose = initMachineScene(root, getComputedStyle(root).fontFamily, {
         embedded: embed,
         onStation: (id) => handlers.current.onStation?.(id as StationId),
+        onStageChange: (name) => setActiveStageName(name),
+        onComplete: () => {
+          setPipelineState('completed');
+          handlers.current.onPipelineComplete?.();
+        },
         onReady: () => handlers.current.onReady?.(),
       });
     });
@@ -65,6 +76,13 @@ export default function AgenticFactory3D({
     }
   }, [activeStation]);
 
+  const handleRestart = () => {
+    if (typeof window !== 'undefined' && window.__machine) {
+      window.__machine.replayPipeline();
+      setPipelineState('running');
+    }
+  };
+
   return (
     <div
       ref={rootRef}
@@ -77,48 +95,44 @@ export default function AgenticFactory3D({
         role="img"
         aria-label="Interactive 3D commerce pipeline with five stations: Receiving, Prep, Pack, Returns, and Recovery."
       />
-      <div className="vignette" />
 
-      {/* TOP HEADER */}
-      <header className="topbar debug-ui">
-        <div className="identity">
-          <div className="mark">
-            <svg width="17" height="17" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M3 5l7 11 7-11M7 5l3 5 3-5"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+      {/* Floating Status / Integration Badge */}
+      <div className="pipeline-floating-banner debug-ui">
+        {pipelineState === 'completed' ? (
+          <div className="complete-badge animate-fade-in">
+            <span className="badge-icon">✓</span>
+            <div>
+              <strong>Complete Integration</strong>
+              <small>All 5 agent invariants verified across the workflow</small>
+            </div>
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="replay-btn"
+            >
+              Replay Trace
+            </button>
           </div>
-          <div>
-            <strong>Commerce Multi-Agent Pipeline</strong>
-            <small>Interactive 3D Machine</small>
+        ) : (
+          <div className="live-badge">
+            <span className="live-dot" />
+            <div>
+              <strong>Sequential Pipeline Active</strong>
+              <small>Current Station: {activeStageName}</small>
+            </div>
           </div>
-        </div>
-        <div className="status" id="status">
-          <i />
-          <span id="status-text">Pipeline stream active</span>
-          <span>EVIDENCE v1.0</span>
-        </div>
-      </header>
-
-      <div className="scene-heading debug-ui">
-        5 AGENTS / 1 IMMUTABLE CONTRACT <span className="index">INBOUND ➔ DISPUTE</span>
+        )}
       </div>
 
-      <div id="labels" />
       <div id="tooltip" role="tooltip">
         <strong />
         <p />
       </div>
 
-      {/* CONTROLS (Focused on overview) */}
+      {/* BACKGROUNDLESS MINIMAL CONTROLS (Overview focused) */}
       <div className="controls debug-ui">
         <nav className="camera-row" aria-label="Camera Controls">
-          <span className="caption">PIPELINE VIEW</span>
+          <span className="caption">VIEW</span>
           <button data-camera="overview" aria-pressed="true">
             Overview
           </button>
@@ -138,17 +152,14 @@ export default function AgenticFactory3D({
         </nav>
       </div>
 
-      {/* FOOTER */}
+      {/* BACKGROUNDLESS MINIMAL INSTRUCTIONS */}
       <footer className="footer">
-        <span className="wordmark">
-          Pod 5-Agent Architecture · <span>Inbound to Dispute</span>
-        </span>
         <span className="hint debug-ui">
           <svg width="13" height="16" viewBox="0 0 13 16" fill="none">
             <rect x="2" y="1" width="9" height="14" rx="4.5" stroke="currentColor" />
             <path d="M6.5 4v3" stroke="currentColor" strokeLinecap="round" />
           </svg>
-          Drag to rotate. Scroll to zoom. Click station to inspect.
+          Drag to rotate • Scroll to zoom • Click any station to inspect
         </span>
       </footer>
 
@@ -165,13 +176,13 @@ export default function AgenticFactory3D({
   );
 }
 
-export type MachineMode = 'assembled' | 'cutaway' | 'stations' | 'order';
-export type MachineCamera = 'overview' | 'side' | 'top' | 'station' | 'flight';
+export type MachineCamera = 'overview' | 'side' | 'top' | 'station';
 
 export type MachineApi = {
   setMode: (name: string) => boolean;
   focusStation: (id: string) => boolean;
   setCamera: (name: string) => boolean;
+  replayPipeline: () => void;
   play: () => boolean;
   pause: () => boolean;
 };
@@ -186,6 +197,8 @@ declare global {
 export type MachineSceneOptions = {
   embedded: boolean;
   onStation?: (id: string) => void;
+  onStageChange?: (name: string) => void;
+  onComplete?: () => void;
   onReady?: () => void;
 };
 
@@ -340,7 +353,7 @@ function initMachineScene(
       black: mat(0x0F172A, 0, 0.6),
       light: mat(palette.terracotta, 0.2, 0.25, { emissive: palette.terracotta, emissiveIntensity: 1.6 }),
       whiteLight: mat(0xFFFFFF, 0.1, 0.3, { emissive: 0xFFFFFF, emissiveIntensity: 1.8 }),
-      green: mat(palette.emerald, 0.1, 0.3, { emissive: palette.emerald, emissiveIntensity: 1.2 }),
+      green: mat(palette.emerald, 0.1, 0.3, { emissive: palette.emerald, emissiveIntensity: 1.5 }),
       glass: mat(0x94A3B8, 0.45, 0.16, { transparent: true, opacity: 0.22, depthWrite: false }),
       paper: mat(0xFFFFFF, 0, 0.85),
     };
@@ -398,33 +411,6 @@ function initMachineScene(
       o.position.set(x, y, z);
       o.castShadow = true;
       o.receiveShadow = true;
-      parent.add(o);
-      return o;
-    }
-
-    function ball(
-      parent: THREE.Object3D,
-      r: number,
-      x: number,
-      y: number,
-      z: number,
-      m: Material = M.chrome
-    ) {
-      const k = `s${r}`;
-      if (!geometries.has(k)) geometries.set(k, new THREE.SphereGeometry(r, 12, 8));
-      const o = new THREE.Mesh(geometries.get(k)!, m);
-      o.position.set(x, y, z);
-      parent.add(o);
-      return o;
-    }
-
-    function tube(parent: THREE.Object3D, pts: Vec3[], r: number, m: Material = M.chrome) {
-      const curve = new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(...p)));
-      const o = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, Math.max(12, pts.length * 7), r, 8, false),
-        m
-      );
-      o.castShadow = true;
       parent.add(o);
       return o;
     }
@@ -549,7 +535,7 @@ function initMachineScene(
 
     // THE 5 COMMERCE STATIONS
     type StationDef = {
-      id: string;
+      id: StationId;
       name: string;
       step: number;
       output: string;
@@ -560,9 +546,7 @@ function initMachineScene(
       group: THREE.Group;
       base: THREE.Vector3;
       glowMat: THREE.MeshStandardMaterial;
-      label: HTMLDivElement;
       index: number;
-      anchor: THREE.Vector3;
     };
 
     const definitions: StationDef[] = [
@@ -641,7 +625,7 @@ function initMachineScene(
       group.position.fromArray(d.pos);
       machine.add(group);
       const glowMat = M.light.clone();
-      glowMat.emissiveIntensity = 0.6;
+      glowMat.emissiveIntensity = 0.5;
 
       box(group, 2.05, 0.12, 1.78, 0, 0.03, 0, M.dark, 0.1);
       box(group, 1.97, 0.03, 1.7, 0, 0.12, 0, glowMat, 0.09);
@@ -653,21 +637,6 @@ function initMachineScene(
       gear(group, 0.22, 0.45, 0.12, 0.21);
       box(group, 0.6, 0.15, 0.36, 0.52, 0.47, -0.33, M.dark);
 
-      for (let j = 0; j < 6; j++)
-        box(group, 0.025, 0.16, 0.37, 0.3 + j * 0.08, 0.47, -0.33, M.edge, 0.004);
-
-      tube(
-        group,
-        [
-          [-0.7, 0.4, -0.4],
-          [-0.55, 0.48, 0.4],
-          [0.35, 0.45, 0.6],
-          [0.7, 0.58, 0.23],
-        ],
-        0.023,
-        M.light
-      );
-
       const plaque = canvasTexture(512, 116, (c, w, h) => {
         c.fillStyle = '#0F172A';
         c.fillRect(0, 0, w, h);
@@ -676,20 +645,12 @@ function initMachineScene(
       });
       screen(group, 1.54, 0.345, 0, 0.27, 0.891, plaque);
 
-      const label = document.createElement('div');
-      label.className = 'station-label';
-      label.innerHTML = `<div class="stem"></div><div class="label-card"><div class="label-title"><span>${String(i + 1).padStart(2, '0')}</span>${d.name}</div><div class="label-meta">Stage ${d.step} · ${d.output}</div></div>`;
-      $('labels').appendChild(label);
-      cleanups.push(() => label.remove());
-
       stations.push({
         ...d,
         group,
         base: new THREE.Vector3(...d.pos),
         glowMat,
-        label,
         index: i,
-        anchor: new THREE.Vector3(0, 2.5, 0),
       });
     });
 
@@ -704,31 +665,23 @@ function initMachineScene(
     box(stReceiving, 1.82, 0.27, 0.4, 0, 2.28, -0.35, M.terracotta, 0.045);
     box(stReceiving, 1.55, 0.06, 0.06, 0, 2.13, -0.115, M.chrome, 0.01);
 
-    const printhead = new THREE.Group();
-    stReceiving.add(printhead);
-    printhead.position.set(0, 1.9, -0.08);
-    printhead.userData.moving = true;
-    box(printhead, 0.45, 0.36, 0.44, 0, 0, 0, M.body, 0.05);
-    cyl(printhead, 0.11, 0.13, 0, -0.24, 0.03, M.chrome, 0.04);
-    box(printhead, 0.24, 0.045, 0.022, 0, 0.09, 0.23, M.light, 0.01);
-
     const rcvScreenTex = canvasTexture(384, 640, (c, w, h) => {
-      c.fillStyle = '#773C30';
+      c.fillStyle = '#1E293B';
       c.fillRect(0, 0, w, h);
-      c.fillStyle = '#26050A';
+      c.fillStyle = '#0F172A';
       c.beginPath();
       c.roundRect(25, 40, 334, 130, 14);
       c.fill();
       print(c, 'INBOUND RCV', 42, 85, 26, '#FFFFFF', 700);
-      print(c, 'PO MATCH: 100%', 42, 125, 20, '#A3E635', 600);
-      c.fillStyle = '#1E293B';
+      print(c, 'PO MATCH: 100%', 42, 125, 20, '#16A34A', 600);
+      c.fillStyle = '#0F172A';
       c.beginPath();
       c.roundRect(25, 195, 334, 395, 14);
       c.fill();
       print(c, 'CARTON AUDIT', 45, 240, 22, '#F8FAFC', 700);
       print(c, 'Shortfall: 0 units', 45, 280, 18, '#CBD5E1', 500);
       print(c, 'Damages: None', 45, 315, 18, '#CBD5E1', 500);
-      print(c, 'VERDICT: PASS', 45, 375, 26, '#A3E635', 800);
+      print(c, 'VERDICT: PASS', 45, 375, 26, '#16A34A', 800);
       print(c, 'Record: RCV-7701', 45, 520, 20, '#FDA4AF', 600);
     });
     const outputVideo = new THREE.Group();
@@ -785,7 +738,7 @@ function initMachineScene(
       c.roundRect(32, 85, 832, 470, 12);
       c.fill();
       print(c, 'PACK MANAGER ➔ MFN / 3PL', 60, 140, 28, '#FFFFFF', 700);
-      print(c, '• Expected Items vs Observed In Box: MATCH', 60, 200, 22, '#A3E635', 600);
+      print(c, '• Expected Items vs Observed In Box: MATCH', 60, 200, 22, '#16A34A', 600);
       print(c, '• Extra Unmanifested Items: NONE', 60, 250, 22, '#CBD5E1', 500);
       print(c, '• Seal Approval: AUTHORIZED (PCK-PASS)', 60, 310, 24, '#773C30', 700);
       print(c, 'CERTIFIED BEFORE TAPE SEALING', 60, 480, 16, '#94A3B8', 600);
@@ -830,7 +783,7 @@ function initMachineScene(
     const recoveryScreenTex = canvasTexture(512, 176, (c, w, h) => {
       c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      print(c, 'LOSS RECOVERY AUDIT', 22, 44, 22, '#A3E635', 700);
+      print(c, 'LOSS RECOVERY AUDIT', 22, 44, 22, '#16A34A', 700);
       print(c, 'CLAIM CONTRADICTED', 26, 105, 34, '#FFFFFF', 800);
       print(c, 'Evidence Chain: RCV+PCK+RTN valid', 26, 145, 16, '#94A3B8');
     });
@@ -898,34 +851,52 @@ function initMachineScene(
       belt.add(new THREE.Mesh(new THREE.TubeGeometry(railPath, 160, 0.028, 6, false), M.chrome));
     }
 
-    // Packet payloads traversing the pipeline
-    const packetTex = canvasTexture(256, 352, (c, w, h) => {
-      c.fillStyle = '#1E293B';
+    // EXACTLY ONE REPORT PAYLOAD - Moves sequentially station to station
+    const reportTex = canvasTexture(320, 420, (c, w, h) => {
+      c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      c.fillStyle = '#773C30';
-      c.fillRect(15, 15, 226, 40);
-      print(c, 'EVIDENCE', 30, 43, 20, '#FFFFFF', 700);
-      c.fillStyle = '#A3E635';
-      c.fillRect(30, 75, 40, 6);
-      print(c, 'UNIT-0006', 30, 115, 18, '#F8FAFC', 600);
-      print(c, 'HASH: 0x9f82b', 30, 150, 14, '#94A3B8');
-      print(c, 'VERIFIED ✓', 30, 310, 20, '#A3E635', 700);
+      c.fillStyle = '#1E293B';
+      c.beginPath();
+      c.roundRect(14, 14, w - 28, h - 28, 12);
+      c.fill();
+      c.fillStyle = '#16A34A';
+      c.fillRect(28, 30, w - 56, 36);
+      print(c, 'EVIDENCE RECORD', 40, 55, 18, '#FFFFFF', 700);
+      print(c, 'UNIT-0006', 36, 115, 24, '#FFFFFF', 700);
+      print(c, 'ORCHESTRATED TRACE', 36, 145, 14, '#94A3B8', 600);
+      c.strokeStyle = '#334155';
+      c.beginPath();
+      c.moveTo(36, 175);
+      c.lineTo(w - 36, 175);
+      c.stroke();
+      print(c, 'STAGE 1: RCV ✓', 36, 215, 16, '#86EFAC', 600);
+      print(c, 'STAGE 2: PRP ✓', 36, 250, 16, '#86EFAC', 600);
+      print(c, 'STAGE 3: PCK ✓', 36, 285, 16, '#86EFAC', 600);
+      print(c, 'STAGE 4: RTN ✓', 36, 320, 16, '#86EFAC', 600);
+      print(c, 'STAGE 5: RCY ✓', 36, 355, 16, '#86EFAC', 600);
+      print(c, 'CRYPTOGRAPHIC SEAL', 36, 395, 13, '#94A3B8', 500);
     });
 
-    const packets: Array<{
-      group: THREE.Group;
-      stage: number;
-    }> = [];
+    const reportGroup = new THREE.Group();
+    reportGroup.userData.moving = true;
+    machine.add(reportGroup);
+    box(reportGroup, 0.55, 0.82, 0.05, 0, 0, 0, M.ivory, 0.024);
+    const reportFace = screen(reportGroup, 0.51, 0.77, 0, 0, 0.028, reportTex);
+    reportFace.material.side = THREE.DoubleSide;
 
-    for (let i = 0; i < 5; i++) {
-      const g = new THREE.Group();
-      g.userData.moving = true;
-      machine.add(g);
-      box(g, 0.47, 0.71, 0.04, 0, 0, 0, M.ivory, 0.022);
-      const s = screen(g, 0.43, 0.665, 0, 0, 0.024, packetTex);
-      s.material.side = THREE.DoubleSide;
-      packets.push({ group: g, stage: i });
-    }
+    const haloRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.44, 0.47, 36),
+      new THREE.MeshBasicMaterial({
+        color: 0x16A34A,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    haloRing.rotation.x = -Math.PI / 2;
+    haloRing.position.y = -0.42;
+    reportGroup.add(haloRing);
 
     // Merge static geometry
     function compact(group: THREE.Object3D) {
@@ -973,8 +944,16 @@ function initMachineScene(
     );
     const pickables = stations.map((s) => s.group);
 
+    // Sequential Stages Coordinates along the path
+    const STAGE_STOPS = [
+      { u: 0.04, id: 'receiving', name: 'Receiving' },
+      { u: 0.25, id: 'prep', name: 'Prep (FBA)' },
+      { u: 0.45, id: 'pack', name: 'Pack (MFN)' },
+      { u: 0.70, id: 'returns', name: 'Returns' },
+      { u: 0.94, id: 'recovery', name: 'Recovery' },
+    ];
+
     let playing = !reduceMotion;
-    let simTime = 0;
     let selected: string = 'receiving';
     let hovered: string | null = null;
     let width = frameWidth();
@@ -988,6 +967,15 @@ function initMachineScene(
     let cameraAnimating = true;
     let visible = true;
     let contextLost = false;
+
+    // Sequential Progress Logic
+    let currentStageIndex = 0;
+    let stageTimer = 0;
+    const STAY_DURATION = 2.4; // Time report stays at each station
+    const MOVE_DURATION = 1.6; // Time report takes to glide to next station
+    let isMoving = false;
+    let moveProgress = 0;
+    let pipelineFinished = false;
 
     const desiredPosition = new THREE.Vector3();
     const desiredTarget = new THREE.Vector3(0, 1, 0);
@@ -1082,6 +1070,16 @@ function initMachineScene(
       return false;
     }
 
+    function replayPipeline() {
+      currentStageIndex = 0;
+      stageTimer = 0;
+      isMoving = false;
+      moveProgress = 0;
+      pipelineFinished = false;
+      options.onStageChange?.(STAGE_STOPS[0].name);
+      play();
+    }
+
     function play() {
       playing = true;
       syncPlayback();
@@ -1107,6 +1105,7 @@ function initMachineScene(
       setMode: () => true,
       focusStation,
       setCamera,
+      replayPipeline,
       play,
       pause,
     };
@@ -1197,6 +1196,7 @@ function initMachineScene(
     });
 
     let lastFrame = performance.now();
+    let simTime = 0;
     let rafId = 0;
 
     function animate(now: number) {
@@ -1207,40 +1207,80 @@ function initMachineScene(
 
       if (playing) {
         simTime += dt;
+
+        // SEQUENTIAL STATION DISPATCH LOGIC
+        if (!pipelineFinished) {
+          if (!isMoving) {
+            stageTimer += dt;
+            if (stageTimer >= STAY_DURATION) {
+              if (currentStageIndex < STAGE_STOPS.length - 1) {
+                isMoving = true;
+                moveProgress = 0;
+              } else {
+                pipelineFinished = true;
+                options.onComplete?.();
+              }
+            }
+          } else {
+            moveProgress += dt / MOVE_DURATION;
+            if (moveProgress >= 1) {
+              moveProgress = 1;
+              isMoving = false;
+              stageTimer = 0;
+              currentStageIndex += 1;
+              options.onStageChange?.(STAGE_STOPS[currentStageIndex].name);
+            }
+          }
+        }
       }
+
       const t = simTime;
       const tact = (t * TAU) / 4;
       const smooth = 1 - Math.exp(-dt * 5);
 
+      // Station pulse: the active station pulses brightly
       stations.forEach((s, i) => {
-        const pulse = Math.pow(Math.max(0, Math.sin(tact - i * 0.9)), 7);
+        const isCurrentActive = i === currentStageIndex && !pipelineFinished;
+        const isPastDone = i < currentStageIndex || pipelineFinished;
+        const targetIntensity = isCurrentActive
+          ? 2.8 + Math.sin(tact * 2) * 1.0
+          : isPastDone
+          ? 1.5
+          : 0.35;
+
         s.glowMat.emissiveIntensity = THREE.MathUtils.lerp(
           s.glowMat.emissiveIntensity,
-          hovered === s.id || (cameraMode === 'station' && selected === s.id)
-            ? 3.2
-            : 0.55 + pulse * 0.65,
+          hovered === s.id ? 3.5 : targetIntensity,
           smooth
         );
       });
 
       gears.forEach(({ g, vertical }, i) => {
-        if (vertical) g.rotation.z = t * (i % 2 ? -1 : 1) * 1.1;
-        else g.rotation.y = t * (i % 2 ? -1 : 1) * 1.1;
+        if (playing && (!pipelineFinished || isMoving)) {
+          if (vertical) g.rotation.z = t * (i % 2 ? -1 : 1) * 1.1;
+          else g.rotation.y = t * (i % 2 ? -1 : 1) * 1.1;
+        }
       });
 
-      printhead.position.x = Math.sin(tact) * 0.42;
-      printhead.position.y = 1.91 + Math.sin(tact * 2) * 0.055;
-      outputVideo.position.y = ((t / 4) % 1) * 0.25;
+      if (playing) {
+        updateBelt(t);
+      }
 
-      updateBelt(t);
+      // Compute exact position of the single report
+      let currentU = STAGE_STOPS[currentStageIndex]?.u ?? 0.04;
+      if (isMoving && currentStageIndex < STAGE_STOPS.length - 1) {
+        const startU = STAGE_STOPS[currentStageIndex].u;
+        const nextU = STAGE_STOPS[currentStageIndex + 1].u;
+        // Smooth ease-in-out movement
+        const eased = moveProgress < 0.5
+          ? 2 * moveProgress * moveProgress
+          : 1 - Math.pow(-2 * moveProgress + 2, 2) / 2;
+        currentU = THREE.MathUtils.lerp(startU, nextU, eased);
+      }
 
-      // Animate packet payloads along belt
-      packets.forEach((packet, idx) => {
-        const u = ((t * 0.04 + idx * 0.2) % 1);
-        path.getPointAt(u, packet.group.position);
-        packet.group.position.y += 0.43;
-        packet.group.rotation.set(0, 0.18, 0);
-      });
+      path.getPointAt(currentU, reportGroup.position);
+      reportGroup.position.y += 0.45;
+      reportGroup.rotation.set(0, 0.18, 0);
 
       if (cameraMode === 'station' && cameraAnimating) setCameraGoal();
 
@@ -1262,8 +1302,8 @@ function initMachineScene(
         !dragging &&
         !cameraAnimating &&
         cameraMode === 'overview' &&
-        now - lastInteraction > 6500;
-      controls.autoRotateSpeed = 0.25;
+        now - lastInteraction > 8000;
+      controls.autoRotateSpeed = 0.22;
       controls.update(dt);
 
       renderer.render(scene, camera);
@@ -1305,12 +1345,11 @@ const STYLES = String.raw`
   width: 100%;
   position: relative;
   overflow: hidden;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow: 0 10px 32px -4px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 1);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #0F172A;
   font-size: 13px;
@@ -1330,87 +1369,107 @@ const STYLES = String.raw`
   width: 100%;
   height: 100%;
 }
-.agentic-factory-3d .vignette {
+
+/* Floating Status / Complete Integration Banner */
+.agentic-factory-3d .pipeline-floating-banner {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(15, 23, 42, 0.05) 100%);
+  top: 18px;
+  left: 20px;
+  z-index: 20;
+  pointer-events: auto;
 }
-.agentic-factory-3d .topbar {
-  position: absolute;
-  inset: 20px 24px auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  pointer-events: none;
-  z-index: 10;
-}
-.agentic-factory-3d .identity {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.agentic-factory-3d .mark {
-  width: 32px;
-  height: 32px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  color: #773C30;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-.agentic-factory-3d .identity strong {
-  display: block;
-  font-weight: 700;
-  font-size: 13px;
-  color: #0F172A;
-}
-.agentic-factory-3d .identity small {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: #773C30;
-  text-transform: uppercase;
-}
-.agentic-factory-3d .status {
+.agentic-factory-3d .live-badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #334155;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 6px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
-.agentic-factory-3d .status i {
+.agentic-factory-3d .live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #16A34A;
-  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.8);
+  animation: af3d-pulse 1.8s ease-in-out infinite;
 }
-.agentic-factory-3d .scene-heading {
-  position: absolute;
-  top: 72px;
-  left: 24px;
-  pointer-events: none;
+@keyframes af3d-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+.agentic-factory-3d .live-badge strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.2;
+}
+.agentic-factory-3d .live-badge small {
+  display: block;
+  font-size: 10px;
+  color: #64748B;
+  font-weight: 600;
+}
+.agentic-factory-3d .complete-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid rgba(22, 163, 74, 0.4);
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.15);
+}
+.agentic-factory-3d .badge-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #16A34A;
+  color: #FFFFFF;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 12px;
+}
+.agentic-factory-3d .complete-badge strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0F172A;
+}
+.agentic-factory-3d .complete-badge small {
+  display: block;
+  font-size: 10px;
+  color: #16A34A;
+  font-weight: 600;
+}
+.agentic-factory-3d .replay-btn {
+  margin-left: 8px;
+  padding: 4px 10px;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.2px;
-  color: #64748B;
-  text-transform: uppercase;
-  z-index: 10;
+  background: #0F172A;
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
+.agentic-factory-3d .replay-btn:hover {
+  background: #1E293B;
+  transform: translateY(-1px);
+}
+
+/* Backgroundless Controls */
 .agentic-factory-3d .controls {
   position: absolute;
-  bottom: 22px;
-  left: 24px;
+  bottom: 16px;
+  left: 20px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1419,30 +1478,31 @@ const STYLES = String.raw`
 .agentic-factory-3d .camera-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  gap: 3px;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 .agentic-factory-3d .camera-row .caption {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.8px;
   color: #64748B;
-  padding: 0 8px 0 4px;
+  padding: 0 6px 0 4px;
 }
 .agentic-factory-3d .camera-row button {
   border: 0;
   background: transparent;
   color: #475569;
-  padding: 6px 10px;
+  padding: 5px 9px;
   font-size: 11px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 9999px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 .agentic-factory-3d .camera-row button:hover {
   background: rgba(241, 245, 249, 0.9);
@@ -1454,32 +1514,26 @@ const STYLES = String.raw`
 }
 .agentic-factory-3d .camera-row .divider {
   width: 1px;
-  height: 14px;
-  background: rgba(148, 163, 184, 0.4);
-  margin: 0 4px;
+  height: 12px;
+  background: rgba(203, 213, 225, 0.8);
+  margin: 0 3px;
 }
 .agentic-factory-3d .camera-row #play {
-  padding: 6px 8px;
+  padding: 5px 8px;
   display: grid;
   place-items: center;
 }
+
+/* Backgroundless Hint */
 .agentic-factory-3d .footer {
   position: absolute;
-  bottom: 22px;
-  right: 24px;
+  bottom: 16px;
+  right: 20px;
   display: flex;
   align-items: center;
   gap: 12px;
   pointer-events: none;
   z-index: 10;
-}
-.agentic-factory-3d .wordmark {
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748B;
-}
-.agentic-factory-3d .wordmark span {
-  color: #773C30;
 }
 .agentic-factory-3d .hint {
   display: flex;
@@ -1488,22 +1542,21 @@ const STYLES = String.raw`
   color: #64748B;
   font-size: 11px;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 5px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent !important;
+  border: none !important;
 }
+
 .agentic-factory-3d #tooltip {
   position: absolute;
   pointer-events: none;
   z-index: 25;
   opacity: 0;
   transition: opacity 0.15s;
-  padding: 12px 14px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 10px 14px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
   border-radius: 12px;
   max-width: 260px;
 }
@@ -1511,7 +1564,7 @@ const STYLES = String.raw`
   opacity: 1;
 }
 .agentic-factory-3d #tooltip strong {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #0F172A;
   display: flex;
@@ -1519,15 +1572,16 @@ const STYLES = String.raw`
   gap: 6px;
 }
 .agentic-factory-3d #tooltip strong span {
-  color: #773C30;
+  color: #16A34A;
   font-family: ui-monospace, monospace;
 }
 .agentic-factory-3d #tooltip p {
   font-size: 11px;
   color: #475569;
   margin: 4px 0 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
+
 .agentic-factory-3d #loading {
   position: absolute;
   left: 50%;
@@ -1545,8 +1599,8 @@ const STYLES = String.raw`
   height: 18px;
   width: 18px;
   border-radius: 50%;
-  border: 2px solid rgba(119, 60, 48, 0.2);
-  border-top-color: #773C30;
+  border: 2px solid rgba(15, 23, 42, 0.2);
+  border-top-color: #0F172A;
   animation: af3d-spin 1s linear infinite;
 }
 @keyframes af3d-spin {
