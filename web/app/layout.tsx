@@ -3,6 +3,7 @@ import './globals.css';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import { BackgroundPixelStars } from '@/components/ui/background-pixel-stars';
+import UniversalHeader from '@/components/UniversalHeader';
 
 export const metadata: Metadata = {
   title: 'Commerce Multi-Agent Pipeline | Pod 8 System',
@@ -30,6 +31,7 @@ export default function RootLayout({
       </head>
       <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
         <BackgroundPixelStars />
+        <UniversalHeader />
         
         <main className="flex-1 w-full mx-auto relative z-10">
           {children}

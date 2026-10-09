@@ -554,15 +554,12 @@ export default function PipelineTracePage() {
 
   return (
     <div className="space-y-10 pb-16 w-full max-w-[1600px] mx-auto px-[10px]">
-      {/* HEADER / BACK NAVIGATION */}
-      <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl neu-flat hover:neu-flat-hover text-xs font-bold text-slate-700"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back</span>
-        </Link>
+      {/* STATUS BANNER */}
+      <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="font-display font-extrabold text-sm text-slate-900 tracking-tight">Interactive Pipeline Trace</span>
+        </div>
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#773C30]">
           <ShieldCheck className="w-4 h-4 stroke-[2.2]" />
           <span>Evidence Contract v1.0 • Multi-Agent Trace</span>

@@ -44,80 +44,6 @@ export default function VesperInvertedLandingPage() {
 
       {/* Page Structure */}
       <div className="page">
-        {/* Mobile backdrop */}
-        <div
-          className="menu-backdrop"
-          onClick={() => setMenuOpen(false)}
-          aria-hidden="true"
-        />
-
-        {/* 1. Header — 3-column grid */}
-        <header className="header">
-          {/* Left: Brand Logo */}
-          <Link
-            href="/"
-            className="logo appear appear--scale"
-            aria-label="Commerce Pipeline - Operational AI Infrastructure"
-          >
-            {/* Exact SVG mark rotated -30deg with dark ink */}
-            <svg
-              className="logo-mark"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <g transform="rotate(-30 12 12)">
-                <circle cx="7.3" cy="3.2" r="1.45" />
-                <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8" />
-                <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8" />
-                <circle cx="16.7" cy="20.8" r="1.45" />
-              </g>
-            </svg>
-            <span className="brand-text">
-              Commerce<span className="logo-suffix">.ai</span>
-            </span>
-          </Link>
-
-          {/* Center: Liquid-metal pill Nav (Inverted to white/silver frost with dark borders) */}
-          <nav id="site-nav" className="nav" aria-label="Primary">
-            <a href="#how-it-works" className="nav-pill appear appear--scale" onClick={() => setMenuOpen(false)}>
-              <span>How It Works</span>
-            </a>
-            <a href="#modules" className="nav-pill appear appear--soft" onClick={() => setMenuOpen(false)}>
-              <span>Five Agents</span>
-            </a>
-            <a href="#evidence" className="nav-pill appear appear--scale" onClick={() => setMenuOpen(false)}>
-              <span>Evidence Chain</span>
-            </a>
-            <a href="#faqs" className="nav-pill appear appear--soft" onClick={() => setMenuOpen(false)}>
-              <span>FAQs</span>
-            </a>
-          </nav>
-
-          {/* Right: Header CTA & Burger */}
-          <div className="header-right">
-            <Link
-              href="/pipeline"
-              className="btn btn-solid header-cta appear appear--scale"
-            >
-              <span>Launch Pipeline</span>
-            </Link>
-
-            <button
-              type="button"
-              className="burger"
-              aria-controls="site-nav"
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              <span className="burger-bar" />
-              <span className="burger-bar" />
-              <span className="burger-bar" />
-            </button>
-          </div>
-        </header>
 
         {/* 2. Hero (bottom-centered, exact typography & tokens) */}
         <main className="hero" id="top">
@@ -164,7 +90,7 @@ export default function VesperInvertedLandingPage() {
         </main>
 
         {/* 3. Stats Footer */}
-        <footer className="stats">
+        <footer className="stats stats-centered">
           {/* Stat 1: Dual-pill workflow icon */}
           <div className="stat appear appear--stat">
             <svg className="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -173,30 +99,6 @@ export default function VesperInvertedLandingPage() {
               <rect x="9.2" y="10.9" width="5.6" height="2.2" rx="1.1" fill="#0F172A" />
             </svg>
             <span className="stat-label">5 Specialized Agents Orchestrated</span>
-          </div>
-
-          {/* Stat 2: Download / verified tile */}
-          <div className="stat appear appear--stat">
-            <svg className="stat-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="2.4" y="2.4" width="19.2" height="19.2" rx="6.2" fill="#0F172A" />
-              <path d="M12 7.1V14.5M8.15 12.35L12 16.2L15.85 12.35" stroke="#FFFFFF" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="stat-label">100% Cryptographic Traceability</span>
-          </div>
-
-          {/* Stat 3: Multi-tenant operational teams avatar group */}
-          <div className="stat appear appear--stat">
-            <svg className="stat-icon-wide" width="38" height="21" viewBox="0 0 40 22" fill="none">
-              <circle cx="10.2" cy="11" r="9.2" fill="#E2E8F0" />
-              <ellipse cx="10.2" cy="12.1" rx="4.15" ry="3.7" fill="#0F172A" />
-              <circle cx="20.2" cy="11" r="9.2" fill="#0F172A" />
-              <circle cx="18.5" cy="10" r="1.5" fill="#FFFFFF" />
-              <circle cx="21.9" cy="10" r="1.5" fill="#FFFFFF" />
-              <path d="M18.8 13.5C19.4 14.2 21 14.2 21.6 13.5" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" />
-              <circle cx="30.2" cy="11" r="9.2" fill="#773C30" />
-              <text x="30.2" y="14.8" fill="#FFFFFF" fontSize="11" fontWeight="700" textAnchor="middle" fontFamily="sans-serif">8</text>
-            </svg>
-            <span className="stat-label">Pod 8 Multi-Tenant Isolation</span>
           </div>
         </footer>
       </div>
@@ -419,10 +321,11 @@ const VESPER_INVERTED_STYLES = `
   overflow-x: hidden;
 }
 
-/* Background floating shades & inverted video (dark floating shades on pure white) */
+/* Background floating shades & inverted video (dark floating shades on pure white, constant across entire scroll) */
 .hero-photo-wrapper {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
   pointer-events: none;
@@ -436,7 +339,7 @@ const VESPER_INVERTED_STYLES = `
   height: 100%;
   object-fit: cover;
   object-position: center;
-  filter: invert(1) hue-rotate(180deg) contrast(1.15) opacity(0.35);
+  filter: invert(1) hue-rotate(180deg) contrast(1.15) opacity(0.3);
   mix-blend-mode: multiply;
   pointer-events: none;
 }
@@ -455,7 +358,7 @@ const VESPER_INVERTED_STYLES = `
   background: radial-gradient(circle, #0F172A 0%, rgba(15, 23, 42, 0) 70%);
   top: -100px;
   left: 20%;
-  animation: float-1 18s ease-in-out infinite alternate;
+  animation: float-1 38s ease-in-out infinite alternate;
 }
 
 .shade-2 {
@@ -464,7 +367,7 @@ const VESPER_INVERTED_STYLES = `
   background: radial-gradient(circle, #334155 0%, rgba(51, 65, 85, 0) 70%);
   top: 35%;
   right: 15%;
-  animation: float-2 22s ease-in-out infinite alternate;
+  animation: float-2 44s ease-in-out infinite alternate;
 }
 
 .shade-3 {
@@ -473,7 +376,7 @@ const VESPER_INVERTED_STYLES = `
   background: radial-gradient(circle, #020617 0%, rgba(2, 6, 23, 0) 70%);
   bottom: -150px;
   left: 30%;
-  animation: float-3 25s ease-in-out infinite alternate;
+  animation: float-3 50s ease-in-out infinite alternate;
 }
 
 @keyframes float-1 {
@@ -815,7 +718,7 @@ const VESPER_INVERTED_STYLES = `
 .content-drawer {
   position: relative;
   z-index: 10;
-  background: #FFFFFF;
+  background: transparent;
   border-top: 1px solid var(--border);
   padding: 80px 24px 100px;
   max-width: 1200px;
@@ -866,7 +769,9 @@ const VESPER_INVERTED_STYLES = `
   padding: 32px;
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.09);
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
@@ -898,18 +803,24 @@ const VESPER_INVERTED_STYLES = `
   line-height: 1.6;
 }
 
-/* Agent cards grid */
+/* Agent cards grid: MS Word center sort (top row 3 cards, bottom row 2 cards centered) */
 .grid-agents {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
 }
 
 .agent-card {
+  flex: 0 1 calc(33.333% - 16px);
+  min-width: 310px;
+  max-width: 370px;
   padding: 28px;
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.09);
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
