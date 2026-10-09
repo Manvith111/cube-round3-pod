@@ -28,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white">
+      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
         <BackgroundPixelStars />
         
         {/* Sticky Neumorphic Header */}

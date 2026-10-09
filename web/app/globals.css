@@ -33,14 +33,14 @@
   --neu-icon-well-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.08);
 }
 
-/* Force Light Theme Throughout */
+/* Pure White Background for entire system */
 html, body {
-  background-color: #E8EDF5 !important;
+  background-color: #FFFFFF !important;
   color: #0F172A !important;
 }
 
 body {
-  background-color: transparent;
+  background-color: #FFFFFF;
   color: var(--neu-text-primary);
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
@@ -50,13 +50,12 @@ body {
   transition: color 0.3s ease;
 }
 
-/* CSS gradient fallback behind the WebGL canvas — ensures background is never plain white */
 html:not(.dark) body {
-  background: linear-gradient(180deg, #9EABC7 0%, #D4A89A 45%, #B299E6 100%) fixed;
+  background: #FFFFFF !important;
 }
 
 html.dark body {
-  background: #000000;
+  background: #FFFFFF !important;
 }
 
 h1, h2, h3, h4, h5, h6, .font-display {

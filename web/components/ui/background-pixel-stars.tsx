@@ -2,24 +2,16 @@
 
 import { memo, useCallback, useEffect, useRef } from "react";
 
-// Palette with black and retro pixel colors suited for white background
+// Pure white star palette as requested: "The stars can be white and no other colors"
 const STAR_COLORS = [
-  "#0F172A", // Deep black/slate
-  "#334155", // Slate gray
-  "#1E293B", // Obsidian
-  "#2563EB", // Retro blue
-  "#16A34A", // Emerald green
-  "#DC2626", // Retro red
-  "#D97706", // Amber gold
-  "#7C3AED", // Purple
-  "#0284C7", // Cyan
+  "#FFFFFF", // Pure White
 ] as const;
 
 // Configuration constants
-const starDensity = 0.000045; // Star density
-const twinkleProbability = 0.7;
-const minTwinkleSpeed = 2;
-const maxTwinkleSpeed = 4;
+const starDensity = 0.00006; // Star density
+const twinkleProbability = 0.8;
+const minTwinkleSpeed = 1.5;
+const maxTwinkleSpeed = 3.5;
 const pixelSize = 4;
 const starRegenerationInterval = 5000;
 const percentToRegenerate = 0.15;
@@ -182,11 +174,19 @@ export const BackgroundPixelStars = memo(
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. Draw and update background stars
+        // 1. Draw and update background stars (Pure white with subtle drop outline so visible on white/light grid)
         backgroundStarsRef.current.forEach((star) => {
+          ctx.save();
+          // Subtle drop shadow so white pixels pop over white grid
+          ctx.shadowColor = "rgba(15, 23, 42, 0.45)";
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
+
           ctx.fillStyle = star.color;
           ctx.globalAlpha = star.currentOpacity;
           ctx.fillRect(star.x, star.y, pixelSize, pixelSize);
+          ctx.restore();
 
           if (star.twinkle) {
             star.twinkleTimer += 1 / targetFps;
@@ -243,7 +243,7 @@ export const BackgroundPixelStars = memo(
                 star.y <= window.innerHeight + 30,
             );
 
-          // 3. Draw shooting stars with crisp dark/retro trails on white background
+          // 3. Draw shooting stars: white stars with dark-edged pixel trails
           shootingStarsRef.current.forEach((star) => {
             star.trail.forEach((point) => {
               ctx.save();
@@ -251,7 +251,10 @@ export const BackgroundPixelStars = memo(
               ctx.rotate((star.angle * Math.PI) / 180);
               ctx.translate(-point.x, -point.y);
 
-              ctx.fillStyle = `rgba(37, 99, 235, ${point.opacity * 0.75})`;
+              // Trail
+              ctx.shadowColor = "rgba(15, 23, 42, 0.4)";
+              ctx.shadowBlur = 2;
+              ctx.fillStyle = `rgba(255, 255, 255, ${point.opacity * 0.9})`;
               ctx.fillRect(point.x, point.y, shootingStarPixelSize, shootingStarPixelSize);
 
               ctx.restore();
@@ -265,8 +268,10 @@ export const BackgroundPixelStars = memo(
             ctx.rotate((star.angle * Math.PI) / 180);
             ctx.translate(-star.x, -star.y);
 
-            ctx.fillStyle = "#0F172A";
-            ctx.globalAlpha = 0.95;
+            ctx.shadowColor = "rgba(15, 23, 42, 0.6)";
+            ctx.shadowBlur = 4;
+            ctx.fillStyle = "#FFFFFF";
+            ctx.globalAlpha = 0.98;
 
             for (let y = 0; y < starHeight; y++) {
               for (let x = 0; x < starWidth; x++) {
