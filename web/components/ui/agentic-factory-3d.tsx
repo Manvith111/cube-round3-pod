@@ -356,6 +356,29 @@ function initMachineScene(
       green: mat(palette.emerald, 0.1, 0.3, { emissive: palette.emerald, emissiveIntensity: 1.5 }),
       glass: mat(0x94A3B8, 0.45, 0.16, { transparent: true, opacity: 0.22, depthWrite: false }),
       paper: mat(0xFFFFFF, 0, 0.85),
+      // Specialized realistic domain materials
+      cardboard: mat(0xC49A6C, 0.02, 0.82), // Authentic Kraft Cardboard Box
+      cardboardDark: mat(0xA87D50, 0.02, 0.85),
+      wood: mat(0x9E7044, 0.02, 0.78), // Pallet wood planks
+      woodDark: mat(0x7C5632, 0.02, 0.8),
+      hazard: mat(0xF59E0B, 0.2, 0.4), // Industrial yellow scanner arch
+      tapeRed: mat(0xDC2626, 0.3, 0.35), // Red handheld packing tape dispenser
+      tapeRoll: mat(0xD97706, 0.1, 0.5), // Tan packing tape roll
+      gold: mat(0xD4AF37, 0.92, 0.2), // Brass balance scale of justice
+      brass: mat(0xEAB308, 0.88, 0.25),
+      binGreen: mat(0x16A34A, 0.2, 0.4), // Grade A Restock bin
+      binAmber: mat(0xD97706, 0.2, 0.4), // Grade B Refurbish bin
+      binRed: mat(0xE11D48, 0.2, 0.4), // Grade C Liquidate bin
+      vestOrange: mat(0xEA580C, 0.05, 0.55), // Worker safety vest
+      skin: mat(0xFBCFE8, 0.02, 0.6), // Stylized worker face/hands
+      productBlue: mat(0x2563EB, 0.2, 0.3), // Product bottle
+      productYellow: mat(0xFACC15, 0.1, 0.4), // Product carton
+      laserGreen: new THREE.MeshBasicMaterial({
+        color: 0x22C55E,
+        transparent: true,
+        opacity: 0.45,
+        side: THREE.DoubleSide,
+      }),
     };
 
     type Vec3 = [number, number, number];
@@ -503,19 +526,18 @@ function initMachineScene(
     scene.add(contact);
 
     // Platform base with engraved commerce pipeline nomenclature
-    box(machine, 12.8, 0.38, 8.25, 0, -0.09, 0, M.base, 0.17);
-    box(machine, 12.6, 0.055, 8.08, 0, 0.13, 0, M.edge, 0.11);
-    box(machine, 12.49, 0.09, 7.96, 0, 0.19, 0, M.body, 0.1);
-    box(machine, 12.55, 0.027, 8.02, 0, -0.19, 0, M.dark, 0.06);
-    box(machine, 11.9, 0.026, 0.032, 0, -0.17, 4.115, M.light, 0.01);
+    box(machine, 15.6, 0.38, 8.2, 0, -0.09, 0, M.base, 0.17);
+    box(machine, 15.4, 0.055, 8.0, 0, 0.13, 0, M.edge, 0.11);
+    box(machine, 15.3, 0.09, 7.88, 0, 0.19, 0, M.body, 0.1);
+    box(machine, 15.35, 0.027, 7.94, 0, -0.19, 0, M.dark, 0.06);
 
-    for (const x of [-5.6, 5.6])
-      for (const z of [-3.35, 3.35]) {
+    for (const x of [-7.0, 7.0])
+      for (const z of [-3.5, 3.5]) {
         cyl(machine, 0.39, 0.25, x, -0.31, z, M.rubber);
         cyl(machine, 0.29, 0.09, x, -0.4, z, M.dark);
         screw(machine, x, 0.253, z);
       }
-    for (const x of [-6.02, 6.02]) for (const z of [-3.73, 3.73]) screw(machine, x, 0.255, z);
+    for (const x of [-7.3, 7.3]) for (const z of [-3.7, 3.7]) screw(machine, x, 0.255, z);
 
     // Platform Engraving
     const engraving = canvasTexture(1536, 176, (c, w, h) => {
@@ -524,16 +546,16 @@ function initMachineScene(
       c.strokeStyle = '#475569';
       c.lineWidth = 2;
       c.strokeRect(2, 2, w - 4, h - 4);
-      print(c, 'COMMERCE PIPELINE', 45, 79, 38, '#F8FAFC', 700);
-      print(c, '· Inbound → Prep → Pack → Returns → Recovery', 510, 79, 32, '#94A3B8', 500);
-      print(c, 'EVIDENCE CONTRACT v1.0   /   POD 5-AGENT ORCHESTRATION', 47, 133, 19, '#CBD5E1', 600);
-      print(c, 'VERIFIED CHAIN', 1330, 130, 22, '#773C30', 700);
+      print(c, 'COMMERCE PIPELINE WORKFLOW', 45, 79, 36, '#F8FAFC', 700);
+      print(c, '· 1. Receiving ➔ 2. Prep ➔ 3. Pack ➔ 4. Returns ➔ 5. Recovery', 630, 79, 28, '#94A3B8', 500);
+      print(c, 'EVIDENCE CONTRACT v1.0   /   IMMUTABLE MULTI-AGENT HANDOFFS', 47, 133, 19, '#CBD5E1', 600);
+      print(c, 'VERIFIED AUDIT TRACE', 1280, 130, 22, '#22C55E', 700);
     });
 
-    const plate = screen(machine, 7.35, 0.84, -0.4, 0.25, 3.51, engraving);
+    const plate = screen(machine, 9.8, 0.84, 0, 0.25, 3.55, engraving);
     plate.rotation.x = -Math.PI / 2;
 
-    // THE 5 COMMERCE STATIONS
+    // THE 5 COMMERCE STATIONS IN STRICT SEQUENTIAL ORDER (Left to Right)
     type StationDef = {
       id: StationId;
       name: string;
@@ -552,73 +574,48 @@ function initMachineScene(
     const definitions: StationDef[] = [
       {
         id: 'receiving',
-        name: 'Receiving',
+        name: 'Receiving Dock',
         step: 1,
         output: 'RCV Record',
-        pos: [-4.15, 0.29, -0.65],
-        desc: 'Inbound PO verification: carton counts, supplier shortfall & arrival inspection.',
+        pos: [-5.2, 0.29, -0.45],
+        desc: 'Inbound PO verification: pallet ingest, carton barcode scan & supplier baseline.',
       },
       {
         id: 'prep',
         name: 'Prep (FBA)',
         step: 2,
         output: 'PRP Record',
-        pos: [-1.65, 0.29, -2.03],
-        desc: 'FBA compliance check: polybag suffocation warnings, FNSKU barcodes & prep rules.',
+        pos: [-2.6, 0.29, -0.45],
+        desc: 'FBA compliance check: operator arranging polybag suffocation warnings & FNSKU barcodes.',
       },
       {
         id: 'pack',
         name: 'Pack (MFN)',
         step: 3,
         output: 'PCK Record',
-        pos: [1.5, 0.29, -2.08],
-        desc: 'Pre-seal carton audit: visual verification of items & quantities before carton sealing.',
+        pos: [0.0, 0.29, -0.45],
+        desc: 'Pre-seal carton audit: 3D cardboard box packing, items in box & overhead visual certification.',
       },
       {
         id: 'returns',
-        name: 'Returns',
+        name: 'Returns Triage',
         step: 4,
         output: 'RTN Record',
-        pos: [4.03, 0.29, 0.12],
-        desc: 'Post-sale return inspection: condition grading against original pack/prep baseline.',
+        pos: [2.6, 0.29, -0.45],
+        desc: 'Post-sale return inspection: RMA scan & condition sorting into Grade A/B/C bins.',
       },
       {
         id: 'recovery',
-        name: 'Recovery',
+        name: 'Recovery Audit',
         step: 5,
         output: 'RCY Record',
-        pos: [0.93, 0.29, 1.85],
-        desc: 'Dispute & loss recovery: cross-examines fee reports against all prior evidence records.',
+        pos: [5.2, 0.29, -0.45],
+        desc: 'Channel loss recovery: financial dispute desk with balance scale & fee reconciliation ledger.',
       },
     ];
 
     const stations: Station[] = [];
     const gears: Array<{ g: THREE.Group; vertical: boolean }> = [];
-
-    function gear(
-      parent: THREE.Object3D,
-      x: number,
-      y: number,
-      z: number,
-      r = 0.3,
-      vertical = false
-    ) {
-      const g = new THREE.Group();
-      g.position.set(x, y, z);
-      if (vertical) g.rotation.x = Math.PI / 2;
-      parent.add(g);
-      cyl(g, r, 0.09, 0, 0, 0, M.copper);
-      cyl(g, r * 0.66, 0.105, 0, 0, 0, M.dark);
-      cyl(g, r * 0.22, 0.14, 0, 0, 0, M.chrome);
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * TAU;
-        const b = box(g, r * 0.26, 0.085, r * 0.2, Math.cos(a) * r, 0, Math.sin(a) * r, M.copper, 0.008);
-        b.rotation.y = -a;
-      }
-      g.userData.moving = true;
-      gears.push({ g, vertical });
-      return g;
-    }
 
     definitions.forEach((d, i) => {
       const group = new THREE.Group();
@@ -627,23 +624,21 @@ function initMachineScene(
       const glowMat = M.light.clone();
       glowMat.emissiveIntensity = 0.5;
 
-      box(group, 2.05, 0.12, 1.78, 0, 0.03, 0, M.dark, 0.1);
-      box(group, 1.97, 0.03, 1.7, 0, 0.12, 0, glowMat, 0.09);
-      box(group, 2.03, 0.17, 1.75, 0, 0.215, 0, M.body, 0.1);
+      // Station Base Pedestal
+      box(group, 2.3, 0.12, 2.1, 0, 0.03, 0, M.dark, 0.08);
+      box(group, 2.22, 0.03, 2.02, 0, 0.12, 0, glowMat, 0.06);
+      box(group, 2.28, 0.17, 2.06, 0, 0.215, 0, M.body, 0.08);
 
-      for (const x of [-0.85, 0.85]) for (const z of [-0.7, 0.7]) screw(group, x, 0.311, z);
+      for (const x of [-0.95, 0.95]) for (const z of [-0.85, 0.85]) screw(group, x, 0.311, z);
 
-      gear(group, -0.35, 0.45, 0, 0.27);
-      gear(group, 0.22, 0.45, 0.12, 0.21);
-      box(group, 0.6, 0.15, 0.36, 0.52, 0.47, -0.33, M.dark);
-
+      // Station Identification Sign
       const plaque = canvasTexture(512, 116, (c, w, h) => {
         c.fillStyle = '#0F172A';
         c.fillRect(0, 0, w, h);
-        print(c, String(i + 1).padStart(2, '0'), 24, 76, 42, '#773C30', 700);
-        print(c, d.name.toUpperCase(), 111, 73, 34, '#F8FAFC', 700);
+        print(c, String(i + 1).padStart(2, '0'), 24, 76, 42, '#22C55E', 700);
+        print(c, d.name.toUpperCase(), 111, 73, 30, '#F8FAFC', 700);
       });
-      screen(group, 1.54, 0.345, 0, 0.27, 0.891, plaque);
+      screen(group, 1.8, 0.345, 0, 0.27, 1.04, plaque);
 
       stations.push({
         ...d,
@@ -654,248 +649,351 @@ function initMachineScene(
       });
     });
 
-    // STATION 1: RECEIVING (Inbound PO Verification)
+    // =========================================================================
+    // STATION 1: INBOUND RECEIVING DOCK (Pallet, Cartons, Overhead Scanner Gate)
+    // =========================================================================
     const stReceiving = stations[0].group;
-    box(stReceiving, 1.74, 0.62, 1.33, 0, 0.65, -0.05, M.ivory, 0.13);
-    box(stReceiving, 1.5, 0.1, 1.16, 0, 0.99, -0.04, M.body, 0.025);
-    for (const x of [-0.68, 0.68]) {
-      cyl(stReceiving, 0.065, 1.73, x, 1.35, -0.18, M.chrome);
-      box(stReceiving, 0.22, 1.8, 0.22, x, 1.37, -0.44, M.ivory, 0.035);
+    // Wooden Pallet Base
+    for (const x of [-0.8, 0, 0.8]) {
+      box(stReceiving, 0.14, 0.14, 1.8, x, 0.37, -0.05, M.woodDark);
     }
-    box(stReceiving, 1.82, 0.27, 0.4, 0, 2.28, -0.35, M.terracotta, 0.045);
-    box(stReceiving, 1.55, 0.06, 0.06, 0, 2.13, -0.115, M.chrome, 0.01);
+    for (let z = -0.85; z <= 0.75; z += 0.27) {
+      box(stReceiving, 1.9, 0.04, 0.22, 0, 0.46, z, M.wood, 0.01);
+    }
+    // Stacked 3D Cardboard Boxes on Pallet
+    box(stReceiving, 0.85, 0.62, 0.75, -0.38, 0.79, -0.2, M.cardboard, 0.02);
+    box(stReceiving, 0.68, 0.52, 0.65, 0.42, 0.74, 0.15, M.cardboardDark, 0.02);
+    box(stReceiving, 0.58, 0.46, 0.58, -0.22, 1.33, -0.15, M.cardboard, 0.02);
+    // Shipping Barcode stickers on cartons
+    box(stReceiving, 0.28, 0.18, 0.01, -0.38, 0.82, 0.18, M.paper);
+    box(stReceiving, 0.26, 0.16, 0.01, 0.42, 0.76, 0.48, M.paper);
 
-    const rcvScreenTex = canvasTexture(384, 640, (c, w, h) => {
-      c.fillStyle = '#1E293B';
+    // Industrial Overhead Scanner Arch (Hazard Yellow / Black)
+    const scannerArch = new THREE.Group();
+    scannerArch.position.set(0, 0, 0.85); // Right over the conveyor line
+    stReceiving.add(scannerArch);
+    box(scannerArch, 0.22, 2.7, 0.24, -1.15, 1.35, 0, M.hazard, 0.03);
+    box(scannerArch, 0.22, 2.7, 0.24, 1.15, 1.35, 0, M.hazard, 0.03);
+    box(scannerArch, 2.52, 0.38, 0.32, 0, 2.65, 0, M.hazard, 0.04);
+    // Scanner optics head
+    box(scannerArch, 0.85, 0.22, 0.38, 0, 2.38, 0, M.dark, 0.03);
+    cyl(scannerArch, 0.11, 0.06, -0.25, 2.25, 0, M.chrome);
+    cyl(scannerArch, 0.11, 0.06, 0.25, 2.25, 0, M.chrome);
+    // Downward green laser scanner beam plane
+    const laserBeam = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.5), M.laserGreen);
+    laserBeam.position.set(0, 1.5, 0);
+    laserBeam.rotation.x = Math.PI / 12;
+    scannerArch.add(laserBeam);
+
+    // Digital Inspection Monitor
+    const rcvScreenTex = canvasTexture(400, 300, (c, w, h) => {
+      c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      c.fillStyle = '#0F172A';
-      c.beginPath();
-      c.roundRect(25, 40, 334, 130, 14);
-      c.fill();
-      print(c, 'INBOUND RCV', 42, 85, 26, '#FFFFFF', 700);
-      print(c, 'PO MATCH: 100%', 42, 125, 20, '#16A34A', 600);
-      c.fillStyle = '#0F172A';
-      c.beginPath();
-      c.roundRect(25, 195, 334, 395, 14);
-      c.fill();
-      print(c, 'CARTON AUDIT', 45, 240, 22, '#F8FAFC', 700);
-      print(c, 'Shortfall: 0 units', 45, 280, 18, '#CBD5E1', 500);
-      print(c, 'Damages: None', 45, 315, 18, '#CBD5E1', 500);
-      print(c, 'VERDICT: PASS', 45, 375, 26, '#16A34A', 800);
-      print(c, 'Record: RCV-7701', 45, 520, 20, '#FDA4AF', 600);
+      c.fillStyle = '#16A34A';
+      c.fillRect(15, 15, w - 30, 42);
+      print(c, '01 RECEIVING DOCK', 30, 43, 20, '#FFFFFF', 700);
+      print(c, 'PO MATCH: 100% VERIFIED', 30, 105, 20, '#22C55E', 700);
+      print(c, 'Cartons: 12 Expected / 12 Ingested', 30, 145, 16, '#E2E8F0', 500);
+      print(c, 'Shortfall: 0 units', 30, 180, 16, '#94A3B8', 500);
+      print(c, 'Damage: None (Baseline Established)', 30, 215, 16, '#94A3B8', 500);
+      print(c, 'RECORD: RCV-BASELINE-OK', 30, 265, 18, '#86EFAC', 700);
     });
-    const outputVideo = new THREE.Group();
-    outputVideo.userData.moving = true;
-    stReceiving.add(outputVideo);
-    box(outputVideo, 0.62, 1.08, 0.055, 0, 1.36, 0.61, M.dark, 0.035);
-    screen(outputVideo, 0.56, 0.98, 0, 1.36, 0.641, rcvScreenTex);
+    screen(stReceiving, 1.25, 0.92, 0, 1.55, -0.92, rcvScreenTex);
 
-    // STATION 2: PREP (FBA Compliance)
+    // =========================================================================
+    // STATION 2: PREP (FBA Compliance, Character arranging items, Polybags)
+    // =========================================================================
     const stPrep = stations[1].group;
-    box(stPrep, 1.9, 0.66, 1.36, 0, 0.67, -0.04, M.body, 0.11);
-    const prepConsole = new THREE.Group();
-    prepConsole.position.set(0, 1.01, -0.08);
-    prepConsole.rotation.x = -0.32;
-    stPrep.add(prepConsole);
-    box(prepConsole, 1.76, 0.12, 1.27, 0, 0, 0, M.ivory, 0.04);
+    // Workbench Table
+    box(stPrep, 2.1, 0.1, 1.6, 0, 0.85, -0.05, M.body, 0.03);
+    for (const x of [-0.92, 0.92]) for (const z of [-0.75, 0.65]) cyl(stPrep, 0.05, 0.85, x, 0.425, z, M.chrome);
 
-    const prepScreenTex = canvasTexture(640, 340, (c, w, h) => {
+    // 3D Stylized Worker Character Arranging Goods
+    const worker = new THREE.Group();
+    worker.position.set(0, 0, -0.72);
+    stPrep.add(worker);
+    // Worker legs
+    box(worker, 0.19, 0.72, 0.19, -0.16, 0.36, 0, M.dark);
+    box(worker, 0.19, 0.72, 0.19, 0.16, 0.36, 0, M.dark);
+    // Torso with orange high-vis safety vest
+    box(worker, 0.52, 0.64, 0.3, 0, 1.04, 0, M.vestOrange, 0.05);
+    // Silver reflective safety stripes
+    box(worker, 0.54, 0.07, 0.32, 0, 1.08, 0, M.chrome);
+    box(worker, 0.07, 0.45, 0.32, -0.15, 1.08, 0, M.chrome);
+    box(worker, 0.07, 0.45, 0.32, 0.15, 1.08, 0, M.chrome);
+    // Head with work cap
+    box(worker, 0.27, 0.27, 0.27, 0, 1.48, 0, M.skin, 0.04);
+    box(worker, 0.32, 0.09, 0.36, 0, 1.62, 0.04, M.dark, 0.02);
+    // Arms reaching down forward to arrange items on table
+    box(worker, 0.12, 0.45, 0.12, -0.32, 1.05, 0.22, M.vestOrange, 0.02);
+    box(worker, 0.12, 0.45, 0.12, 0.32, 1.05, 0.22, M.vestOrange, 0.02);
+    box(worker, 0.1, 0.1, 0.1, -0.32, 0.86, 0.42, M.skin);
+    box(worker, 0.1, 0.1, 0.1, 0.32, 0.86, 0.42, M.skin);
+
+    // Prep Items on Table: Clear Polybags & FNSKU Barcodes
+    box(stPrep, 0.45, 0.06, 0.4, -0.42, 0.93, 0.15, M.chrome, 0.01);
+    box(stPrep, 0.38, 0.05, 0.32, 0.38, 0.93, 0.12, M.cardboard, 0.01);
+    cyl(stPrep, 0.14, 0.18, -0.58, 0.99, -0.35, M.tapeRoll); // FNSKU barcode roll
+    cyl(stPrep, 0.03, 0.25, 0.55, 1.02, -0.3, M.chrome); // Barcode scanner stand
+
+    // Desktop Monitor on Swivel Arm
+    const prepMonitor = new THREE.Group();
+    prepMonitor.position.set(0.48, 0.9, -0.5);
+    stPrep.add(prepMonitor);
+    cyl(prepMonitor, 0.14, 0.03, 0, 0.02, 0, M.dark);
+    cyl(prepMonitor, 0.03, 0.45, 0, 0.24, 0, M.chrome);
+    box(prepMonitor, 0.85, 0.55, 0.05, 0, 0.48, 0, M.dark, 0.03);
+    const prepScreenTex = canvasTexture(380, 240, (c, w, h) => {
       c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      print(c, 'FBA PREP COMPLIANCE', 25, 45, 22, '#CBD5E1', 700);
-      print(c, 'STATION 02', 497, 45, 20, '#773C30', 700);
-      for (let i = 0; i < 3; i++) {
-        const y = 74 + i * 76;
-        c.fillStyle = '#1E293B';
-        c.beginPath();
-        c.roundRect(21, y, 598, 61, 8);
-        c.fill();
-        c.fillStyle = i === 0 ? '#16A34A' : '#475569';
-        c.fillRect(34, y + 10, 27, 41);
-        print(c, ['Polybag Sealed', 'Suffocation Warning', 'FNSKU Barcode'][i], 77, y + 29, 19, '#F8FAFC', 600);
-        print(c, 'COMPLIANT ✓', 77, y + 49, 12, '#86EFAC', 600);
-      }
+      print(c, '02 FBA PREP COMPLIANCE', 20, 36, 18, '#22C55E', 700);
+      print(c, '• Polybag Sealing: PASS ✓', 20, 80, 16, '#F8FAFC', 600);
+      print(c, '• Suffocation Warning: 100% VISIBLE', 20, 120, 15, '#E2E8F0', 500);
+      print(c, '• FNSKU Barcode: SCANNED', 20, 160, 15, '#E2E8F0', 500);
+      print(c, 'STATUS: AMAZON FBA READY', 20, 205, 17, '#86EFAC', 700);
     });
-    const qs = screen(prepConsole, 1.53, 0.79, 0, 0.067, -0.17, prepScreenTex);
-    qs.rotation.x = -Math.PI / 2;
+    screen(prepMonitor, 0.8, 0.5, 0, 0.48, 0.028, prepScreenTex);
 
-    // STATION 3: PACK (Pre-Seal Carton Audit)
+    // =========================================================================
+    // STATION 3: PRE-SEAL PACK (3D Cardboard Box with Open Flaps, Tape Gun, Overhead Camera)
+    // =========================================================================
     const stPack = stations[2].group;
-    box(stPack, 1.35, 0.18, 0.88, 0, 0.44, 0, M.ivory, 0.045);
-    cyl(stPack, 0.095, 1.04, 0, 0.93, -0.31, M.chrome);
-    box(stPack, 0.56, 0.91, 0.14, 0, 0.99, -0.34, M.body, 0.04);
-    box(stPack, 2.42, 1.72, 0.2, 0, 1.94, -0.17, M.ivory, 0.08);
-    box(stPack, 2.28, 1.59, 0.1, 0, 1.94, -0.044, M.dark, 0.045);
+    // Packing Workbench Table
+    box(stPack, 2.1, 0.1, 1.6, 0, 0.85, -0.05, M.body, 0.03);
+    for (const x of [-0.92, 0.92]) for (const z of [-0.75, 0.65]) cyl(stPack, 0.05, 0.85, x, 0.425, z, M.chrome);
 
-    const packScreenTex = canvasTexture(896, 592, (c, w, h) => {
-      c.fillStyle = '#F8FAFC';
+    // THE PROMINENT 3D CARDBOARD BOX
+    const cardboardBox = new THREE.Group();
+    cardboardBox.position.set(0, 0.9, 0.05);
+    stPack.add(cardboardBox);
+    // Box bottom
+    box(cardboardBox, 0.92, 0.04, 0.82, 0, 0.02, 0, M.cardboard);
+    // 4 Walls
+    box(cardboardBox, 0.04, 0.55, 0.82, -0.44, 0.295, 0, M.cardboard);
+    box(cardboardBox, 0.04, 0.55, 0.82, 0.44, 0.295, 0, M.cardboard);
+    box(cardboardBox, 0.92, 0.55, 0.04, 0, 0.295, -0.39, M.cardboard);
+    box(cardboardBox, 0.92, 0.55, 0.04, 0, 0.295, 0.39, M.cardboard);
+    // 4 Open Angled Flaps (flapped outward ~35 degrees)
+    const flapLeft = box(cardboardBox, 0.03, 0.22, 0.82, -0.52, 0.63, 0, M.cardboard);
+    flapLeft.rotation.z = Math.PI / 5;
+    const flapRight = box(cardboardBox, 0.03, 0.22, 0.82, 0.52, 0.63, 0, M.cardboard);
+    flapRight.rotation.z = -Math.PI / 5;
+    const flapBack = box(cardboardBox, 0.92, 0.22, 0.03, 0, 0.63, -0.47, M.cardboard);
+    flapBack.rotation.x = -Math.PI / 5;
+    const flapFront = box(cardboardBox, 0.92, 0.22, 0.03, 0, 0.63, 0.47, M.cardboard);
+    flapFront.rotation.x = Math.PI / 5;
+
+    // Goods Packed Inside Open Box
+    cyl(cardboardBox, 0.11, 0.42, -0.18, 0.25, -0.05, M.productBlue); // Water Bottle
+    box(cardboardBox, 0.26, 0.35, 0.24, 0.18, 0.21, 0.05, M.productYellow, 0.01); // Product unit
+    box(cardboardBox, 0.82, 0.06, 0.72, 0, 0.06, 0, M.ivory); // Cushioning paper
+
+    // Red Packing Tape Gun Dispenser on the Table
+    const tapeGun = new THREE.Group();
+    tapeGun.position.set(0.68, 0.91, -0.35);
+    tapeGun.rotation.y = -Math.PI / 4;
+    stPack.add(tapeGun);
+    box(tapeGun, 0.08, 0.24, 0.08, 0, 0.12, 0, M.tapeRed, 0.02); // Handle
+    cyl(tapeGun, 0.12, 0.08, 0, 0.26, 0.12, M.tapeRoll); // Tape roll
+    box(tapeGun, 0.14, 0.06, 0.12, 0, 0.34, 0.05, M.tapeRed); // Frame
+    box(tapeGun, 0.12, 0.02, 0.06, 0, 0.36, 0.16, M.chrome); // Cutter blade
+
+    // Overhead Articulated Camera Boom (Pre-Seal Carton Audit)
+    const cameraBoom = new THREE.Group();
+    cameraBoom.position.set(0, 0.9, -0.65);
+    stPack.add(cameraBoom);
+    cyl(cameraBoom, 0.045, 1.45, 0.65, 0.72, 0, M.chrome); // Vertical arm
+    const boomArm = cyl(cameraBoom, 0.035, 0.92, 0.32, 1.45, 0.35, M.chrome);
+    boomArm.rotation.x = Math.PI / 3;
+    // Camera unit pointed downward into the open cardboard box
+    const camUnit = box(cameraBoom, 0.24, 0.2, 0.26, 0, 1.38, 0.65, M.dark, 0.03);
+    cyl(camUnit, 0.085, 0.06, 0, -0.12, 0, M.chrome); // Lens
+    cyl(camUnit, 0.045, 0.07, 0, -0.14, 0, M.productBlue);
+
+    // Pre-Seal Audit Display Screen
+    const packScreenTex = canvasTexture(400, 260, (c, w, h) => {
+      c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      c.fillStyle = '#E2E8F0';
-      c.fillRect(0, 0, w, 56);
-      print(c, 'PRE-SEAL CARTON AUDIT', 33, 38, 22, '#0F172A', 700);
-      c.fillStyle = '#1E293B';
-      c.beginPath();
-      c.roundRect(32, 85, 832, 470, 12);
-      c.fill();
-      print(c, 'PACK MANAGER ➔ MFN / 3PL', 60, 140, 28, '#FFFFFF', 700);
-      print(c, '• Expected Items vs Observed In Box: MATCH', 60, 200, 22, '#16A34A', 600);
-      print(c, '• Extra Unmanifested Items: NONE', 60, 250, 22, '#CBD5E1', 500);
-      print(c, '• Seal Approval: AUTHORIZED (PCK-PASS)', 60, 310, 24, '#773C30', 700);
-      print(c, 'CERTIFIED BEFORE TAPE SEALING', 60, 480, 16, '#94A3B8', 600);
+      print(c, '03 PRE-SEAL PACK AUDIT', 20, 36, 18, '#22C55E', 700);
+      print(c, '• Manifest vs Box Image: MATCH ✓', 20, 80, 15, '#F8FAFC', 600);
+      print(c, '• SKU-BOTTLE-750: Count 2 verified', 20, 118, 14, '#CBD5E1', 500);
+      print(c, '• SKU-NOTEBOOK-A5: Count 1 verified', 20, 152, 14, '#CBD5E1', 500);
+      print(c, '• Foreign Objects: None Detected', 20, 186, 14, '#CBD5E1', 500);
+      print(c, 'STATUS: APPROVED TO TAPE SEAL', 20, 230, 17, '#86EFAC', 700);
     });
-    screen(stPack, 2.16, 1.43, 0, 1.95, 0.011, packScreenTex);
+    screen(stPack, 1.15, 0.75, -0.42, 1.5, -0.92, packScreenTex);
 
-    // STATION 4: RETURNS (Condition Grading)
+    // =========================================================================
+    // STATION 4: RETURNS & CONDITION GRADING (Returned Parcel, Grade A/B/C Bins)
+    // =========================================================================
     const stReturns = stations[3].group;
-    box(stReturns, 1.75, 1.77, 1.02, 0, 1.24, -0.13, M.body, 0.12);
-    box(stReturns, 1.58, 0.13, 1.09, 0, 2.16, -0.13, M.terracotta, 0.04);
-    box(stReturns, 1.47, 1.38, 0.055, 0, 1.31, 0.405, M.dark, 0.025);
+    // Returns Inspection Table
+    box(stReturns, 2.1, 0.1, 1.6, 0, 0.85, -0.05, M.body, 0.03);
+    for (const x of [-0.92, 0.92]) for (const z of [-0.75, 0.65]) cyl(stReturns, 0.05, 0.85, x, 0.425, z, M.chrome);
 
-    const returnsScreenTex = canvasTexture(480, 460, (c, w, h) => {
+    // Returned Customer Parcel with yellow RMA tag
+    const returnBox = box(stReturns, 0.65, 0.45, 0.55, -0.48, 1.12, 0.12, M.cardboardDark, 0.02);
+    // Yellow Return / RMA Sticker
+    box(returnBox, 0.28, 0.02, 0.22, 0, 0.23, 0, M.hazard);
+
+    // 3-Tier Colored Sorting Bins on Steel Rack
+    const binRack = new THREE.Group();
+    binRack.position.set(0.48, 0.9, -0.15);
+    stReturns.add(binRack);
+    // Green Bin: Grade A Restock
+    box(binRack, 0.58, 0.26, 0.44, 0, 0.16, 0.42, M.binGreen, 0.02);
+    box(binRack, 0.24, 0.08, 0.01, 0, 0.16, 0.65, M.paper); // Label: GRADE A
+    // Amber Bin: Grade B Refurbish
+    box(binRack, 0.58, 0.26, 0.44, 0, 0.48, 0.05, M.binAmber, 0.02);
+    box(binRack, 0.24, 0.08, 0.01, 0, 0.48, 0.28, M.paper); // Label: GRADE B
+    // Red Bin: Grade C Liquidate / Dispute
+    box(binRack, 0.58, 0.26, 0.44, 0, 0.80, -0.32, M.binRed, 0.02);
+    box(binRack, 0.24, 0.08, 0.01, 0, 0.80, -0.09, M.paper); // Label: GRADE C
+
+    // Handheld Scanner on Return Dock
+    cyl(stReturns, 0.08, 0.08, -0.45, 0.94, -0.45, M.dark);
+    box(stReturns, 0.12, 0.22, 0.14, -0.45, 1.08, -0.45, M.chrome);
+
+    // Returns Grading Monitor
+    const returnsScreenTex = canvasTexture(380, 240, (c, w, h) => {
       c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      print(c, 'RETURN GRADING', 30, 51, 26, '#F8FAFC', 700);
-      print(c, 'Baseline Check: PCK-PASS matched', 30, 81, 15, '#94A3B8');
-      ;['Grade A (New)', 'Grade B (Open Box)', 'Grade C (Damaged)'].forEach((n, idx) => {
-        const y = 110 + idx * 100;
-        c.fillStyle = '#1E293B';
-        c.beginPath();
-        c.roundRect(22, y, 436, 83, 8);
-        c.fill();
-        c.fillStyle = idx === 0 ? '#16A34A' : '#773C30';
-        c.beginPath();
-        c.arc(58, y + 40, 19, 0, TAU);
-        c.fill();
-        print(c, n, 93, y + 36, 20, '#F8FAFC', 600);
-        print(c, 'Disposition: ' + (idx === 0 ? 'RESTOCK' : 'REFURBISH'), 93, y + 60, 14, '#CBD5E1');
-      });
+      print(c, '04 RETURNS TRIAGE', 20, 36, 18, '#22C55E', 700);
+      print(c, '• Grade A (Restock): Original Seal Intact', 20, 80, 14, '#86EFAC', 600);
+      print(c, '• Grade B (Refurbish): Open Box Only', 20, 120, 14, '#FDE047', 600);
+      print(c, '• Grade C (Liquidate): Damage Contradicts Baseline', 20, 160, 14, '#FDA4AF', 600);
+      print(c, 'DISPOSITION: RESTOCK AUTHORIZED', 20, 205, 17, '#22C55E', 700);
     });
-    screen(stReturns, 1.31, 1.255, 0, 1.37, 0.44, returnsScreenTex);
+    screen(stReturns, 1.15, 0.75, 0, 1.5, -0.92, returnsScreenTex);
 
-    // STATION 5: RECOVERY (Dispute & Loss Recovery)
+    // =========================================================================
+    // STATION 5: RECOVERY & FINANCIAL AUDIT (Desk, 3D Brass Balance Scale, Dispute Ledger)
+    // =========================================================================
     const stRecovery = stations[4].group;
-    box(stRecovery, 1.91, 0.63, 1.32, 0, 0.65, -0.06, M.ivory, 0.12);
-    box(stRecovery, 1.96, 0.19, 1.38, 0, 0.42, -0.04, M.body, 0.04);
-    box(stRecovery, 1.02, 0.25, 0.91, -0.33, 1.04, -0.03, M.body, 0.045);
-    cyl(stRecovery, 0.06, 0.65, -0.35, 1.6, -0.56, M.chrome);
-    box(stRecovery, 1.13, 0.46, 0.19, -0.35, 1.98, -0.56, M.body, 0.045);
+    // Executive Obsidian & Chrome Audit Desk
+    box(stRecovery, 2.2, 0.12, 1.6, 0, 0.85, -0.05, M.dark, 0.03);
+    box(stRecovery, 0.2, 0.8, 1.4, -0.92, 0.42, -0.05, M.body);
+    box(stRecovery, 0.2, 0.8, 1.4, 0.92, 0.42, -0.05, M.body);
 
-    const recoveryScreenTex = canvasTexture(512, 176, (c, w, h) => {
+    // 3D BRASS BALANCE SCALE OF JUSTICE & FINANCIAL RECONCILIATION
+    const balanceScale = new THREE.Group();
+    balanceScale.position.set(-0.35, 0.9, 0.1);
+    stRecovery.add(balanceScale);
+    // Base pedestal & central pillar
+    cyl(balanceScale, 0.22, 0.08, 0, 0.04, 0, M.gold);
+    cyl(balanceScale, 0.05, 0.85, 0, 0.48, 0, M.gold);
+    cyl(balanceScale, 0.09, 0.1, 0, 0.92, 0, M.brass); // Pivot sphere
+    // Horizontal balance beam
+    const beam = box(balanceScale, 0.88, 0.04, 0.04, 0, 0.92, 0, M.gold);
+    beam.rotation.z = -0.06; // Slightly tilted showing merchant evidence outweighs fee claim!
+    // Left Pan: Marketplace Fee Claim
+    cyl(balanceScale, 0.16, 0.03, -0.38, 0.58, 0, M.gold);
+    box(balanceScale, 0.015, 0.32, 0.015, -0.38, 0.74, 0, M.chrome);
+    box(balanceScale, 0.12, 0.08, 0.12, -0.38, 0.63, 0, M.copper); // Claim weight
+    // Right Pan: Verified Cryptographic Evidence
+    cyl(balanceScale, 0.16, 0.03, 0.38, 0.52, 0, M.gold);
+    box(balanceScale, 0.015, 0.38, 0.015, 0.38, 0.71, 0, M.chrome);
+    box(balanceScale, 0.14, 0.12, 0.14, 0.38, 0.60, 0, M.gold); // Evidence weight
+
+    // Financial Audit Monitor
+    const recoveryScreenTex = canvasTexture(400, 260, (c, w, h) => {
       c.fillStyle = '#0F172A';
       c.fillRect(0, 0, w, h);
-      print(c, 'LOSS RECOVERY AUDIT', 22, 44, 22, '#16A34A', 700);
-      print(c, 'CLAIM CONTRADICTED', 26, 105, 34, '#FFFFFF', 800);
-      print(c, 'Evidence Chain: RCV+PCK+RTN valid', 26, 145, 16, '#94A3B8');
+      print(c, '05 FINANCIAL RECOVERY AUDIT', 20, 36, 18, '#22C55E', 700);
+      print(c, 'FEE CLAIM CONTRADICTED ✓', 20, 85, 22, '#FFFFFF', 800);
+      print(c, '+$2,840.00 RECOVERED', 20, 130, 26, '#22C55E', 800);
+      print(c, '• Evidence Records: RCV + PRP + PCK + RTN', 20, 170, 14, '#CBD5E1', 500);
+      print(c, '• Cryptographic Status: SEALED & IMMUTABLE', 20, 202, 14, '#94A3B8', 500);
+      print(c, 'RESOLUTION: 100% REIMBURSEMENT', 20, 240, 16, '#86EFAC', 700);
     });
-    screen(stRecovery, 1.015, 0.349, -0.35, 1.98, -0.459, recoveryScreenTex);
+    screen(stRecovery, 1.25, 0.85, 0.35, 1.52, -0.85, recoveryScreenTex);
 
-    // CONVEYOR BELT PIPELINE
-    const path = new THREE.CatmullRomCurve3(
-      [
-        [-3.95, 0.84, 0.65],
-        [-3.1, 0.84, -0.12],
-        [-1.45, 0.84, -0.79],
-        [1.32, 0.84, -0.8],
-        [3.3, 0.84, 0.19],
-        [3.43, 0.84, 1.21],
-        [1.35, 0.84, 2.7],
-        [-1.4, 0.84, 2.52],
-        [-3.54, 0.84, 1.65],
-      ].map((p) => new THREE.Vector3(...p)),
-      true,
-      'catmullrom',
-      0.25
-    );
-
+    // =========================================================================
+    // STRAIGHT DIRECTIONAL CONVEYOR BELT (Runs across all 5 stations from Left to Right)
+    // =========================================================================
     const belt = new THREE.Group();
     machine.add(belt);
-    const frameMesh = new THREE.Mesh(new THREE.TubeGeometry(path, 150, 0.35, 8, true), M.dark);
-    frameMesh.scale.y = 0.3;
-    frameMesh.position.y = 0.51;
-    belt.add(frameMesh);
 
-    const beltCount = 148;
-    const beltSlats = new THREE.InstancedMesh(boxGeo(0.135, 0.065, 0.63, 0.012), M.body, beltCount);
-    beltSlats.receiveShadow = true;
-    belt.add(beltSlats);
-    beltSlats.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // Main heavy conveyor chassis frame
+    box(belt, 13.8, 0.28, 1.1, 0, 0.65, 0.85, M.dark);
+    box(belt, 13.6, 0.04, 1.05, 0, 0.80, 0.85, M.rubber);
 
-    const dummy = new THREE.Object3D();
-    const pVec = new THREE.Vector3();
-    const tVec = new THREE.Vector3();
-
-    function updateBelt(t: number) {
-      for (let i = 0; i < beltCount; i++) {
-        const u = (i / beltCount + t * 0.012) % 1;
-        path.getPointAt(u, pVec);
-        path.getTangentAt(u, tVec);
-        dummy.position.copy(pVec);
-        dummy.rotation.set(0, -Math.atan2(tVec.z, tVec.x), 0);
-        dummy.updateMatrix();
-        beltSlats.setMatrixAt(i, dummy.matrix);
+    // Dual Chrome Side Guide Rails with vertical supports
+    for (const zSide of [0.32, 1.38]) {
+      cyl(belt, 0.024, 13.6, 0, 0.92, zSide, M.chrome, undefined, 12);
+      for (let x = -6.0; x <= 6.0; x += 1.5) {
+        cyl(belt, 0.02, 0.16, x, 0.84, zSide, M.dark, undefined, 12);
       }
-      beltSlats.instanceMatrix.needsUpdate = true;
-    }
-    updateBelt(0);
-
-    for (const side of [-1, 1]) {
-      const pts = [];
-      for (let i = 0; i <= 160; i++) {
-        path.getPointAt(i / 160, pVec);
-        path.getTangentAt(i / 160, tVec);
-        pts.push(
-          pVec.clone().add(new THREE.Vector3(-tVec.z * 0.36 * side, 0.09, tVec.x * 0.36 * side))
-        );
-      }
-      const railPath = new THREE.CatmullRomCurve3(pts);
-      belt.add(new THREE.Mesh(new THREE.TubeGeometry(railPath, 160, 0.028, 6, false), M.chrome));
     }
 
-    // EXACTLY ONE REPORT PAYLOAD - Moves sequentially station to station
-    const reportTex = canvasTexture(320, 420, (c, w, h) => {
-      c.fillStyle = '#0F172A';
-      c.fillRect(0, 0, w, h);
+    // Chrome Rotating Conveyor Rollers Spaced Evenly
+    const rollerCount = 28;
+    const rollers: THREE.Mesh[] = [];
+    for (let i = 0; i < rollerCount; i++) {
+      const x = -5.8 + (i / (rollerCount - 1)) * 11.6;
+      const rMesh = cyl(belt, 0.048, 0.94, x, 0.825, 0.85, M.chrome, undefined, 16);
+      rMesh.rotation.x = Math.PI / 2;
+      rollers.push(rMesh);
+    }
+
+    // Directional Chevron Arrows Glowing along front edge (➔ ➔ ➔)
+    const chevronTex = canvasTexture(1024, 64, (c, w, h) => {
       c.fillStyle = '#1E293B';
-      c.beginPath();
-      c.roundRect(14, 14, w - 28, h - 28, 12);
-      c.fill();
-      c.fillStyle = '#16A34A';
-      c.fillRect(28, 30, w - 56, 36);
-      print(c, 'EVIDENCE RECORD', 40, 55, 18, '#FFFFFF', 700);
-      print(c, 'UNIT-0006', 36, 115, 24, '#FFFFFF', 700);
-      print(c, 'ORCHESTRATED TRACE', 36, 145, 14, '#94A3B8', 600);
-      c.strokeStyle = '#334155';
-      c.beginPath();
-      c.moveTo(36, 175);
-      c.lineTo(w - 36, 175);
-      c.stroke();
-      print(c, 'STAGE 1: RCV ✓', 36, 215, 16, '#86EFAC', 600);
-      print(c, 'STAGE 2: PRP ✓', 36, 250, 16, '#86EFAC', 600);
-      print(c, 'STAGE 3: PCK ✓', 36, 285, 16, '#86EFAC', 600);
-      print(c, 'STAGE 4: RTN ✓', 36, 320, 16, '#86EFAC', 600);
-      print(c, 'STAGE 5: RCY ✓', 36, 355, 16, '#86EFAC', 600);
-      print(c, 'CRYPTOGRAPHIC SEAL', 36, 395, 13, '#94A3B8', 500);
+      c.fillRect(0, 0, w, h);
+      for (let x = 32; x < w; x += 96) {
+        c.fillStyle = '#22C55E';
+        c.beginPath();
+        c.moveTo(x, 16);
+        c.lineTo(x + 24, 32);
+        c.lineTo(x, 48);
+        c.lineTo(x + 10, 48);
+        c.lineTo(x + 34, 32);
+        c.lineTo(x + 10, 16);
+        c.closePath();
+        c.fill();
+      }
     });
+    screen(belt, 13.6, 0.18, 0, 0.66, 1.41, chevronTex);
 
+    // =========================================================================
+    // EXACTLY ONE 3D CARDBOARD PARCEL - Moves Sequentially from Station 1 to 5
+    // =========================================================================
     const reportGroup = new THREE.Group();
     reportGroup.userData.moving = true;
     machine.add(reportGroup);
-    box(reportGroup, 0.55, 0.82, 0.05, 0, 0, 0, M.ivory, 0.024);
-    const reportFace = screen(reportGroup, 0.51, 0.77, 0, 0, 0.028, reportTex);
-    reportFace.material.side = THREE.DoubleSide;
 
+    // Authentic Kraft Cardboard Box Unit
+    box(reportGroup, 0.72, 0.46, 0.58, 0, 0.23, 0, M.cardboard, 0.025);
+    // Sealing tape strip across top
+    box(reportGroup, 0.74, 0.015, 0.12, 0, 0.465, 0, M.copper);
+    // Shipping Barcode label on side
+    const labelTex = canvasTexture(256, 128, (c, w, h) => {
+      c.fillStyle = '#FFFFFF';
+      c.fillRect(0, 0, w, h);
+      c.fillStyle = '#0F172A';
+      c.font = 'bold 16px monospace';
+      c.fillText('EVIDENCE CONTRACT', 12, 28);
+      c.font = 'bold 18px monospace';
+      c.fillText('UNIT-0006', 12, 54);
+      for (let x = 12; x < w - 12; x += 6) {
+        c.fillRect(x, 65, Math.random() > 0.3 ? 3 : 1, 45);
+      }
+    });
+    screen(reportGroup, 0.42, 0.22, 0, 0.23, 0.295, labelTex);
+
+    // Glowing verification ring
     const haloRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.44, 0.47, 36),
+      new THREE.RingGeometry(0.48, 0.54, 36),
       new THREE.MeshBasicMaterial({
-        color: 0x16A34A,
+        color: 0x22C55E,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.85,
         side: THREE.DoubleSide,
         depthWrite: false,
       })
     );
     haloRing.rotation.x = -Math.PI / 2;
-    haloRing.position.y = -0.42;
+    haloRing.position.y = -0.01;
     reportGroup.add(haloRing);
 
     // Merge static geometry
@@ -944,13 +1042,13 @@ function initMachineScene(
     );
     const pickables = stations.map((s) => s.group);
 
-    // Sequential Stages Coordinates along the path
+    // Sequential Stages Coordinates along the straight conveyor (Left to Right)
     const STAGE_STOPS = [
-      { u: 0.04, id: 'receiving', name: 'Receiving' },
-      { u: 0.25, id: 'prep', name: 'Prep (FBA)' },
-      { u: 0.45, id: 'pack', name: 'Pack (MFN)' },
-      { u: 0.70, id: 'returns', name: 'Returns' },
-      { u: 0.94, id: 'recovery', name: 'Recovery' },
+      { x: -5.2, id: 'receiving', name: 'Receiving Dock' },
+      { x: -2.6, id: 'prep', name: 'Prep (FBA)' },
+      { x: 0.0, id: 'pack', name: 'Pack (MFN)' },
+      { x: 2.6, id: 'returns', name: 'Returns Triage' },
+      { x: 5.2, id: 'recovery', name: 'Recovery Audit' },
     ];
 
     let playing = !reduceMotion;
@@ -978,9 +1076,9 @@ function initMachineScene(
     let pipelineFinished = false;
 
     const desiredPosition = new THREE.Vector3();
-    const desiredTarget = new THREE.Vector3(0, 1, 0);
-    const viewDirection = new THREE.Vector3(10.5, 10.8, 17).normalize();
-    let baseDistance = 25;
+    const desiredTarget = new THREE.Vector3(0, 1.0, 0);
+    const viewDirection = new THREE.Vector3(3.2, 9.2, 19).normalize();
+    let baseDistance = 24;
     let sized = false;
     let readySent = false;
 
@@ -1004,13 +1102,13 @@ function initMachineScene(
       );
 
       const aspect = width / height;
-      const availableWidth = mobile ? 0.91 : Math.min(0.55, aspect > 2 ? 0.54 : 0.57);
+      const availableWidth = mobile ? 0.92 : Math.min(0.58, aspect > 2 ? 0.56 : 0.60);
       const horizontalFit =
-        17.3 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * aspect * availableWidth);
+        18.5 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * aspect * availableWidth);
       const verticalFit =
-        11.5 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * (embedded ? 0.85 : 0.62));
+        12.0 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * (embedded ? 0.85 : 0.62));
       baseDistance =
-        (Math.max(horizontalFit, verticalFit) * (mobile ? 0.97 : 1)) /
+        (Math.max(horizontalFit, verticalFit) * (mobile ? 0.98 : 1)) /
         (embedded ? (mobile ? 1.15 : 1.45) : 1);
       controls.maxDistance = Math.max(55, baseDistance * 1.6);
       camera.updateProjectionMatrix();
@@ -1030,17 +1128,17 @@ function initMachineScene(
     function setCameraGoal() {
       if (cameraMode === 'station') {
         const s = stations.find((s) => s.id === selected) || stations[0];
-        desiredTarget.copy(s.group.position).add(new THREE.Vector3(0, 1.25, 0));
-        desiredPosition.copy(desiredTarget).addScaledVector(viewDirection, mobile ? 9 : 12);
+        desiredTarget.copy(s.group.position).add(new THREE.Vector3(0, 1.25, 0.2));
+        desiredPosition.copy(desiredTarget).addScaledVector(viewDirection, mobile ? 8 : 10);
       } else if (cameraMode === 'side') {
-        desiredTarget.set(0, 1, 0);
-        desiredPosition.set(13, 5, 20).normalize().multiplyScalar(baseDistance).add(desiredTarget);
+        desiredTarget.set(0, 1.0, 0);
+        desiredPosition.set(16, 6, 9).normalize().multiplyScalar(baseDistance).add(desiredTarget);
       } else if (cameraMode === 'top') {
-        desiredTarget.set(0, 1, 0);
-        desiredPosition.set(0.01, baseDistance, 0.8).add(desiredTarget);
+        desiredTarget.set(0, 1.0, 0);
+        desiredPosition.set(0.01, baseDistance, 0.4).add(desiredTarget);
       } else {
         // OVERVIEW default
-        desiredTarget.set(0, 1, 0);
+        desiredTarget.set(0, 1.0, 0);
         desiredPosition.copy(viewDirection).multiplyScalar(baseDistance).add(desiredTarget);
       }
     }
@@ -1255,32 +1353,34 @@ function initMachineScene(
         );
       });
 
-      gears.forEach(({ g, vertical }, i) => {
-        if (playing && (!pipelineFinished || isMoving)) {
-          if (vertical) g.rotation.z = t * (i % 2 ? -1 : 1) * 1.1;
-          else g.rotation.y = t * (i % 2 ? -1 : 1) * 1.1;
-        }
-      });
-
-      if (playing) {
-        updateBelt(t);
+      // Rollers rotate when conveyor is active
+      if (playing && (!pipelineFinished || isMoving)) {
+        rollers.forEach((r) => {
+          r.rotation.z += dt * 4;
+        });
       }
 
-      // Compute exact position of the single report
-      let currentU = STAGE_STOPS[currentStageIndex]?.u ?? 0.04;
+      // Compute exact position of the single 3D cardboard parcel along straight conveyor
+      let currentX = STAGE_STOPS[currentStageIndex]?.x ?? -5.2;
       if (isMoving && currentStageIndex < STAGE_STOPS.length - 1) {
-        const startU = STAGE_STOPS[currentStageIndex].u;
-        const nextU = STAGE_STOPS[currentStageIndex + 1].u;
+        const startX = STAGE_STOPS[currentStageIndex].x;
+        const nextX = STAGE_STOPS[currentStageIndex + 1].x;
         // Smooth ease-in-out movement
         const eased = moveProgress < 0.5
           ? 2 * moveProgress * moveProgress
           : 1 - Math.pow(-2 * moveProgress + 2, 2) / 2;
-        currentU = THREE.MathUtils.lerp(startU, nextU, eased);
+        currentX = THREE.MathUtils.lerp(startX, nextX, eased);
       }
 
-      path.getPointAt(currentU, reportGroup.position);
-      reportGroup.position.y += 0.45;
-      reportGroup.rotation.set(0, 0.18, 0);
+      reportGroup.position.set(currentX, 0.88, 0.85);
+      reportGroup.rotation.set(0, 0, 0);
+
+      // Station inspection animations
+      if (playing) {
+        laserBeam.material.opacity = 0.25 + Math.sin(t * 8) * 0.2;
+        worker.rotation.y = Math.sin(t * 2.5) * 0.05;
+        beam.rotation.z = -0.05 + Math.sin(t * 2) * 0.02;
+      }
 
       if (cameraMode === 'station' && cameraAnimating) setCameraGoal();
 

@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
-import AuroraBackground from '@/components/AuroraBackground';
 import { GridPulse } from '@/components/ui/grid-pulse';
 
 export const metadata: Metadata = {
@@ -30,7 +29,6 @@ export default function RootLayout({
         />
       </head>
       <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-[#E8EDF5]">
-        <AuroraBackground />
         <GridPulse />
         
         {/* Sticky Neumorphic Header */}

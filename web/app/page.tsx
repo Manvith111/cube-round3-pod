@@ -66,11 +66,6 @@ export default function IndustrialLandingPage() {
     <div className="space-y-16 py-6 sm:py-10 max-w-6xl mx-auto">
       {/* 1. HERO SECTION */}
       <section className="text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full neu-pressed-sm text-xs font-bold uppercase tracking-wider text-[#773C30]">
-          <ShieldCheck className="w-4 h-4 stroke-[2.2]" />
-          <span>Pod 5-Agent Commerce Verification</span>
-        </div>
-
         <h1 className="font-display font-extrabold text-4xl sm:text-6xl text-slate-900 tracking-tight leading-tight">
           Automated Commerce Integrity. <br className="hidden sm:inline" />
           From Inbound to Dispute.
