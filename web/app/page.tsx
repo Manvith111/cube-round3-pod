@@ -292,7 +292,7 @@ const VESPER_INVERTED_STYLES = `
   position: relative;
   width: 100%;
   min-height: 100vh;
-  background-color: #FFFFFF !important;
+  background-color: transparent !important;
   color: var(--text);
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;

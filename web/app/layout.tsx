@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
-import { BackgroundPixelStars } from '@/components/ui/background-pixel-stars';
 import BackgroundShader from '@/components/BackgroundShader';
 import UniversalHeader from '@/components/UniversalHeader';
 
@@ -32,7 +31,6 @@ export default function RootLayout({
       </head>
       <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white">
         <BackgroundShader />
-        <BackgroundPixelStars />
         <UniversalHeader />
         
         <main className="flex-1 w-full mx-auto relative z-10">
