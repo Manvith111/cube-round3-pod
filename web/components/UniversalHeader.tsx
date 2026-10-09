@@ -106,7 +106,7 @@ const UNIVERSAL_HEADER_STYLES = `
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 10px 40px 10px;
+  padding: 20px 40px 16px;
   position: relative;
   z-index: 50;
   background: transparent;

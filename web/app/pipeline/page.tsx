@@ -553,18 +553,8 @@ export default function PipelineTracePage() {
   }, [currentRun, historyRuns]);
 
   return (
-    <div className="space-y-10 pb-16 w-full max-w-[1600px] mx-auto px-[10px]">
-      {/* STATUS BANNER */}
-      <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-display font-extrabold text-sm text-slate-900 tracking-tight">Interactive Pipeline Trace</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#773C30]">
-          <ShieldCheck className="w-4 h-4 stroke-[2.2]" />
-          <span>Evidence Contract v1.0 • Multi-Agent Trace</span>
-        </div>
-      </div>
+    <div className="space-y-10 pb-16 pt-8 w-full max-w-[1600px] mx-auto px-[10px] relative z-10 pipeline-transparent-root">
+      <style dangerouslySetInnerHTML={{ __html: PIPELINE_TRANSPARENT_STYLES }} />
 
       {/* WORKFLOW CONTROLS & CASE SELECTOR */}
       <section className="rounded-[28px] neu-flat p-6 sm:p-8 space-y-5">
@@ -1305,3 +1295,51 @@ export default function PipelineTracePage() {
     </div>
   );
 }
+
+const PIPELINE_TRANSPARENT_STYLES = `
+/* Transparent Glassmorphic Overrides for Pipeline page — matches Landing page aesthetic */
+.pipeline-transparent-root {
+  background: transparent !important;
+}
+
+.pipeline-transparent-root .neu-flat {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+}
+
+.pipeline-transparent-root .neu-pressed,
+.pipeline-transparent-root .neu-pressed-sm,
+.pipeline-transparent-root .neu-pressed-deep {
+  background: rgba(248, 250, 252, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.pipeline-transparent-root .neu-input,
+.pipeline-transparent-root select,
+.pipeline-transparent-root input {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+}
+
+.pipeline-transparent-root .build-pipeline {
+  --bp-surface: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+}
+
+.pipeline-transparent-root .bg-white\\/75,
+.pipeline-transparent-root .bg-white\\/80 {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+`;

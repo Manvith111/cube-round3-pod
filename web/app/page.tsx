@@ -22,26 +22,6 @@ export default function VesperInvertedLandingPage() {
     <div className={`vesper-inverted-root ${menuOpen ? 'menu-open' : ''} ${isIn ? 'animations-ready' : ''}`}>
       <style dangerouslySetInnerHTML={{ __html: VESPER_INVERTED_STYLES }} />
 
-      {/* Background Hero floating animation (black subtle shade floating in pure white background) */}
-      <div className="hero-photo-wrapper" aria-hidden="true">
-        <div className="floating-shade shade-1" />
-        <div className="floating-shade shade-2" />
-        <div className="floating-shade shade-3" />
-        <video
-          className="hero-video-invert"
-          autoPlay
-          muted
-          loop
-          playsInline
-          disablePictureInPicture
-        >
-          <source
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4"
-            type="video/mp4"
-          />
-        </video>
-      </div>
-
       {/* Page Structure */}
       <div className="page">
 
@@ -591,13 +571,13 @@ const VESPER_INVERTED_STYLES = `
   transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
-/* 2. Hero (bottom-centered) */
+/* 2. Hero: positioned lower so badge starts slightly below middle of screen */
 .hero {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 8px 24px var(--hero-gap);
-  min-height: 0;
+  padding: 100px 24px 40px;
+  min-height: calc(100vh - 160px);
 }
 
 .hero-copy {

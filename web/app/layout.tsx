@@ -3,6 +3,7 @@ import './globals.css';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import { BackgroundPixelStars } from '@/components/ui/background-pixel-stars';
+import BackgroundShader from '@/components/BackgroundShader';
 import UniversalHeader from '@/components/UniversalHeader';
 
 export const metadata: Metadata = {
@@ -29,7 +30,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
+      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white">
+        <BackgroundShader />
         <BackgroundPixelStars />
         <UniversalHeader />
         
