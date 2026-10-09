@@ -103,7 +103,11 @@ print(json.dumps(result))
 print("###JSON_END###")
 `;
 
-    const pythonBin = path.resolve('D:/cube-round3-pod/.venv/Scripts/python.exe');
+    let pythonBin = path.resolve('D:/cube-round3-pod/.venv/Scripts/python.exe');
+    if (!fs.existsSync(pythonBin)) {
+      const sysPy = 'C:/Users/ys304/AppData/Local/Programs/Python/Python312/python.exe';
+      pythonBin = fs.existsSync(sysPy) ? sysPy : 'python';
+    }
     const workingDir = path.resolve('D:/cube-round3-pod');
 
     return new Promise<NextResponse>((resolve) => {

@@ -206,12 +206,60 @@ def _overall(checks: list[dict]) -> tuple[str, str]:
     return "PASS", "PASS — every required check passed with cited visual evidence."
 
 
+# (check_key, csv column, passing values, failing values). "not_required" rows produce no check.
+STUB_RULES = [
+    ("polybag_sealed", "polybag_present_sealed", {"yes"}, {"not_sealed", "missing"}),
+    ("suffocation_warning", "suffocation_warning", {"legible"}, {"obscured_by_fold", "missing"}),
+    ("fnsku_label_placement", "fnsku_label_placement", {"flat"}, {"on_seam", "on_curve", "on_edge", "missing"}),
+    ("original_barcode_covered", "original_barcode_covered", {"yes"}, {"no"}),
+    ("expiry_legible", "expiry_date", {"legible"}, {"illegible_after_wrap"}),
+    ("handling_marks", "handling_marks", {"all_present"}, {"some_missing"}),
+]
+
+
+def _replay_csv(request: dict) -> dict:
+    from shared.utils import sample_data
+    from shared.utils.stubs import photos as stub_photos, verdict_from
+    s = request["subject"]
+    r = sample_data.row("prep", s["subject_id"], s["org_id"])
+    refs = [p["ref"] for p in stub_photos(r)]
+    checks = [
+        check(key, verdict_from(r[col], ok, bad), None, expected=sorted(ok)[0], observed=r[col],
+              evidence_refs=refs, uncertain_reason="poor_image")
+        for key, col, ok, bad in STUB_RULES if r[col] != "not_required"
+    ]
+    verdict = "FAIL" if any(c["verdict"] == "FAIL" for c in checks) else (
+        "UNCERTAIN" if any(c["verdict"] == "UNCERTAIN" for c in checks) or not checks else "PASS")
+    outcome = {"PASS": "compliant", "FAIL": "non_compliant", "UNCERTAIN": "pending_review"}[verdict]
+
+    prev = previous(request, STAGE)
+    if prev:
+        verdict = effective_verdict(request, prev) if prev else verdict
+
+    record = build_record(
+        request, agent_id=AGENT_ID, record_id=r["record_id"], captured_at=r["captured_at"], operator_id=r["operator_id"],
+        refs={"work_order_id": r["work_order_id"], "fba_shipment_id": r["fba_shipment_id"], "sku": r["sku"],
+              "asin": r["asin"], "fnsku": r["fnsku"]},
+        checks=checks, outcome=outcome, verdict=verdict,
+        model={"name": "csv-replay", "version": "0", "provider": None, "calls": 0, "cost_usd": 0},
+        inputs=stub_photos(r),
+        reason=f"sample CSV replay fallback (no physical captures provided); {sum(c['verdict'] == 'FAIL' for c in checks)} failed check(s)",
+        payload={"prep_price_usd": float(r["prep_price_usd"]), "measurements": None, "replay": True},
+    )
+    return build_output(record)
+
+
 # ----------------------------------------------------------------- entry point
 def handle(request: dict) -> dict:
     _assert_tenant(request)
     subject = request["subject"]
     product = _resolve_product(request)
     photos = _load_photos(request.get("inputs", []))
+
+    # If no physical photos are supplied in request, replay sample CSV fixture (identical to Returns agent behaviour)
+    if not photos:
+        return _replay_csv(request)
+
     refs = [p["ref"] for p in photos]
 
     vision = observe(product, photos, CHECK_CATALOG, RULE_CLAUSES)
