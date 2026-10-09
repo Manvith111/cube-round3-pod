@@ -31,28 +31,6 @@ export default function RootLayout({
       <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
         <BackgroundPixelStars />
         
-        {/* Sticky Neumorphic Header */}
-        <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-          <div className="max-w-7xl mx-auto rounded-[28px] neu-flat px-6 h-18 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-2xl neu-icon-well flex items-center justify-center p-1.5 group-hover:scale-105 transition-transform duration-300 overflow-hidden">
-                <img src="/icon.png" alt="Commerce Pipeline" className="w-full h-full object-contain" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-display font-extrabold text-lg tracking-tight text-slate-900">
-                  Commerce Pipeline
-                </span>
-              </div>
-            </Link>
-
-            <nav className="flex items-center gap-2 sm:gap-4 text-sm font-semibold">
-              <span className="px-3 py-1.5 rounded-2xl text-xs font-mono font-bold neu-pressed-sm text-[#773C30]">
-                Evidence Contract v1.0
-              </span>
-            </nav>
-          </div>
-        </header>
-
         <main className="flex-1 w-full mx-auto relative z-10">
           {children}
         </main>

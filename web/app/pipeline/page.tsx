@@ -561,7 +561,7 @@ export default function PipelineTracePage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl neu-flat hover:neu-flat-hover text-xs font-bold text-slate-700"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Landing Page</span>
+          <span>Back</span>
         </Link>
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#773C30]">
           <ShieldCheck className="w-4 h-4 stroke-[2.2]" />
