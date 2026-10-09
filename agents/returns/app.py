@@ -14,7 +14,7 @@ under data/input/<subject_id>/ are ever read.
 
 Captures use a filename convention: `reference_*` (catalogue photos) and `returned_*` (the returned item).
 
-Environment (names only, see .env.example):  VLM_API_KEY  VLM_BASE_URL  VLM_MODEL  VLM_TIMEOUT_SECONDS
+Environment (names only, see .env.example):  VLM_API_KEY  VLM_BASE_URL  VLM_MODEL_GROQ  VLM_TIMEOUT_SECONDS
 VLM_MAX_RETRIES  INPUT_DIR.  `openai`, `pydantic-settings`, `tenacity` and `python-dotenv` are imported lazily,
 only on the real path, so the replay path (and `make test`) needs none of them.
 

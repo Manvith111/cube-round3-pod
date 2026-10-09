@@ -102,9 +102,9 @@ python-dotenv>=1.0,<2      # tested 1.2.4
 
 (`pydantic` itself already arrives through `fastapi`.)
 
-**Environment variable names** (already appended to `.env.example`, placeholders only): `VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL`, `VLM_TIMEOUT_SECONDS`, `VLM_MAX_RETRIES`. Optional: `INPUT_DIR` (already listed in the Pod's example). `GEMINI_API_KEY` is **not** used.
+**Environment variable names** (already appended to `.env.example`, placeholders only): `VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL_GROQ` (not `VLM_MODEL`: the Pack agent already uses that name for its Gemini model), `VLM_TIMEOUT_SECONDS`, `VLM_MAX_RETRIES`. Optional: `INPUT_DIR` (already listed in the Pod's example). `GEMINI_API_KEY` is **not** used.
 
-**Hosted services / databases:** one external service, an OpenAI-compatible vision-model endpoint (Round 2 default: Groq at `https://api.groq.com/openai/v1`; the model name is read from `VLM_MODEL`, with no default in the Pod's example). No database. Round 2's local JSONL evidence store is disabled; the orchestrator owns storage.
+**Hosted services / databases:** one external service, an OpenAI-compatible vision-model endpoint (Round 2 default: Groq at `https://api.groq.com/openai/v1`; the model name is read from `VLM_MODEL_GROQ`, with no default in the Pod's example). No database. Round 2's local JSONL evidence store is disabled; the orchestrator owns storage.
 
 ## 6. Open questions that need the Pod
 

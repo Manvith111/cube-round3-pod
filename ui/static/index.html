@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pod Test Lab</title>
+<link rel="icon" href="data:,">
+<!-- Font as in the reference design. If the font host is unreachable the system fonts in style.css are used. -->
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ph" viewBox="0 0 24 18"><rect x="1" y="1" width="22" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M2 16l7-6 4 3 3-2 6 5" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol></svg>
+
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand"><span class="logo" aria-hidden="true"></span>Pod Test Lab</div>
+    <span class="live">Live: real orchestrator, nothing mocked</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="num">1</span>Choose a track</h2>
+    <div id="tracks" class="grid tracks" role="radiogroup" aria-label="Track"></div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="num">2</span>Choose a unit</h2>
+    <div class="card form">
+      <label>Company <select id="org"></select></label>
+      <label>Unit ID <input id="unit" value="UNIT-0014" autocomplete="off" spellcheck="false"></label>
+      <fieldset class="seg">
+        <legend>Run</legend>
+        <label><input type="radio" name="mode" value="single" checked><span>One stage</span></label>
+        <label><input type="radio" name="mode" value="full"><span>Whole workflow</span></label>
+      </fieldset>
+    </div>
+    <p id="caseline" class="muted"></p>
+  </section>
+
+  <section class="step" aria-labelledby="s3">
+    <h2 id="s3"><span class="num">3</span>Add images</h2>
+    <div class="card">
+      <div class="imghead"><strong id="imgcount"></strong><span id="imgfolder" class="muted"></span></div>
+      <div id="thumbs" class="thumbs"></div>
+      <div id="addbtns" class="row"></div>
+      <p class="muted" id="rule"></p>
+      <details class="soft">
+        <summary>Copy from file paths instead</summary>
+        <div id="roles"></div>
+        <button type="button" id="do-copy" class="btn">Copy files</button>
+      </details>
+      <div id="capture-result" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="runbar" aria-label="Run">
+    <label id="pairwrap" hidden>Returns photos sent
+      <select id="pair"></select>
+    </label>
+    <button type="button" id="run" class="btn primary big">Run test</button>
+    <details class="more">
+      <summary class="btn">More checks</summary>
+      <div class="menu">
+        <button type="button" class="btn" data-test="wrong_company">Wrong company</button>
+        <button type="button" class="btn" data-test="no_image">No image</button>
+        <button type="button" class="btn" data-test="agent_down">Agent down</button>
+      </div>
+    </details>
+    <span id="stg" class="muted" aria-live="polite"></span>
+  </section>
+
+  <section id="results" class="results" aria-live="polite"></section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

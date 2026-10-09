@@ -1,10 +1,10 @@
 {
   "stage": "receiving",
-  "agent_id": "receiving-agent@1",
+  "agent_id": "receiving-agent@2",
   "owner": "https://github.com/PavaniPatluri",
   "mode": "inproc",
   "url": "http://localhost:8101",
   "module": "agents.receiving.app",
-  "implementation": "Real Round 2 Receiving Agent calling Gemini-2.0-flash",
-  "notes": "Ported from JS/React to Python inproc to seamlessly integrate with test orchestrator."
+  "implementation": "Vision agent over an OpenAI-compatible endpoint (Groq by default, same settings as Returns: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_GROQ). With photos and a key it makes one model call per photo; the model only observes, fixed rules turn each observation into PASS/FAIL/UNCERTAIN, and the six checks are combined across photos with each photo's own result kept in payload.per_image. Photos but no key or every call failing: a pending record. No photos: a labelled CSV replay (model.name csv-replay, calls 0), not this agent's judgment.",
+  "notes": "Python, in-process. Replaces the one hardcoded gemini-2.0-flash text-only call (that model was shut down on 2026-06-01 and the image data was never sent); a Gemini key was also blocked by Google for the test project, so the Pod lead moved Receiving to the Groq vision model. Per-photo calls were requested by the Pod lead; this departs from the one-batched-call-per-unit rule."
 }

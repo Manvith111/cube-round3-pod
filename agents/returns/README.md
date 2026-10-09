@@ -48,7 +48,7 @@ The model block is `{name: <model id>, version: "unpinned", calls: 1, cost_usd: 
 # The real path needs these (imported lazily, not in the Pod's requirements.txt yet):
 pip install "openai>=1.40,<2" "pydantic-settings>=2.3,<3" "tenacity>=8.2,<9" "python-dotenv>=1.0,<2"
 # Environment variable names (values in your own .env, never committed): see .env.example
-#   VLM_API_KEY  VLM_BASE_URL  VLM_MODEL  VLM_TIMEOUT_SECONDS  VLM_MAX_RETRIES
+#   VLM_API_KEY  VLM_BASE_URL  VLM_MODEL_GROQ  VLM_TIMEOUT_SECONDS  VLM_MAX_RETRIES
 
 uvicorn agents.returns.app:app --port 8104     # GET /health, POST /run
 curl localhost:8104/health
