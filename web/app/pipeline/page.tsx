@@ -34,6 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import BuildPipeline, { PipelineRun, PipelineStage, StageStatus, PipelineLog } from '@/components/ui/build-pipeline';
+import AgenticFactory3D from '@/components/ui/agentic-factory-3d';
 
 interface CaseOption {
   unit_id: string;
@@ -966,6 +967,36 @@ export default function PipelineTracePage() {
           <span>{errorMsg}</span>
         </div>
       )}
+
+      {/* 3D INTERACTIVE PIPELINE MACHINE (AgenticFactory3D) */}
+      <div className="w-full space-y-3">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="font-display font-extrabold text-sm text-slate-900 tracking-tight">
+              3D Interactive Pipeline Machine
+            </h3>
+            <span className="text-[10px] font-mono font-bold uppercase text-[#773C30] px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200">
+              Overview Mode
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500">
+            Rotate & zoom to explore • Click any of the 5 stations to inspect
+          </span>
+        </div>
+
+        <AgenticFactory3D
+          height="520px"
+          activeStation={selectedStageDetail}
+          onStation={(id) => {
+            if (id === 'receiving') setSelectedStageDetail('receiving');
+            else if (id === 'prep') setSelectedStageDetail('prep');
+            else if (id === 'pack') setSelectedStageDetail('pack');
+            else if (id === 'returns') setSelectedStageDetail('returns');
+            else if (id === 'recovery') setSelectedStageDetail('recovery');
+          }}
+        />
+      </div>
 
       {/* 3D ISOMETRIC / LIST VIEW GLASSMORPHIC BUILD PIPELINE */}
       <div className="w-full">

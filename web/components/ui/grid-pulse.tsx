@@ -35,13 +35,13 @@ const HUE_SPAN = 270;
 const TINTS = [88, 80, 72, 64, 56];
 const TINTS_DARK = [72, 65, 58, 51, 44];
 /** How faint a cell goes right behind a line of text. */
-const FAINT = 0.13;
+const FAINT = 0.02;
 /** How many cells it takes to come back up to full strength. */
-const FADE = 2.2;
+const FADE = 2.0;
 /** Clearing kept around each line of text, in px. */
-const PAD = 5;
-const FADE_IN = 160;
-const FADE_OUT = 750;
+const PAD = 8;
+const FADE_IN = 80;
+const FADE_OUT = 320;
 
 type Cell = {
   col: number;
@@ -59,21 +59,14 @@ const easeIn = (t: number) => t * t;
 
 /**
  * A fine grid that takes colour where the pointer passes and lets it go a
- * moment later, with a few cells lighting on their own. The spectrum runs
- * down the field like a printed colour chart, so a sweep reveals one
- * coherent band of colour rather than confetti.
- *
- * Place it inside a positioned container, under the content. It is
- * decoration only: hidden from assistive tech, transparent to the pointer,
- * drawn on one canvas that sleeps whenever nothing is lit, paused off screen,
- * and still for readers who ask for reduced motion.
+ * moment later.
  */
 export function GridPulse({
   cell = 24,
-  reach = 2.6,
-  ambient = 2,
-  maxLit = 180,
-  avoid = "[data-grid-avoid]",
+  reach = 2.2,
+  ambient = 0,
+  maxLit = 120,
+  avoid = "h1, h2, h3, h4, p, a, button, select, input, [data-grid-avoid], .grid-avoid",
   className,
   style,
   ...props
@@ -188,13 +181,13 @@ export function GridPulse({
           alpha = easeOut(Math.min(1, (now - c.born) / FADE_IN));
         } else {
           const t = (now - c.until) / FADE_OUT;
-          if (t >= 1) {
+          if (t >= 1 || now - c.born > 1200) {
             cells.delete(key);
             continue;
           }
           alpha = 1 - easeIn(t);
         }
-        ctx.globalAlpha = alpha * c.dim;
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha * c.dim * 0.35));
         ctx.fillStyle = c.colour;
         // Inset by the hairline, so the grid still shows between lit cells.
         ctx.fillRect(c.col * cell + 1, c.row * cell + 1, cell - 1, cell - 1);
@@ -214,8 +207,8 @@ export function GridPulse({
       const now = performance.now();
       const lit = cells.get(key);
       if (lit && now < lit.until) return;
-      // A cell caught again while fading picks up from where it had got to,
-      // instead of blinking out and back in.
+      const dim = brightness(col, row);
+      if (dim <= 0.05) return; // Do not light if directly under text
       let born = now;
       if (lit) {
         const faded = 1 - easeIn(Math.min(1, (now - lit.until) / FADE_OUT));
@@ -225,7 +218,7 @@ export function GridPulse({
         col,
         row,
         colour: lit?.colour ?? ink(row),
-        dim: brightness(col, row),
+        dim,
         born,
         until: now + hold,
       });
@@ -247,7 +240,7 @@ export function GridPulse({
           const away = Math.hypot(dx, dy);
           if (away > reach) continue;
           if (Math.random() > 1 - away / (reach + 0.6)) continue;
-          light(cx + dx, cy + dy, 260 + Math.random() * 900);
+          light(cx + dx, cy + dy, 120 + Math.random() * 250);
         }
       }
     };
@@ -264,17 +257,18 @@ export function GridPulse({
     let visible = true;
     let beat = 0;
     const drift = () => {
-      beat = window.setTimeout(drift, 1400 + Math.random() * 1800);
-      if (!visible || document.hidden) return;
-      for (let i = 0; i < ambient; i++) {
-        light(
-          Math.floor(Math.random() * cols),
-          Math.floor(Math.random() * rows),
-          900 + Math.random() * 1600,
-        );
+      if (ambient > 0 && visible && !document.hidden) {
+        for (let i = 0; i < ambient; i++) {
+          light(
+            Math.floor(Math.random() * cols),
+            Math.floor(Math.random() * rows),
+            150 + Math.random() * 250,
+          );
+        }
       }
+      beat = window.setTimeout(drift, 3000 + Math.random() * 2000);
     };
-    beat = window.setTimeout(drift, 500);
+    beat = window.setTimeout(drift, 1000);
 
     const sight = new IntersectionObserver(([entry]) => {
       visible = entry?.isIntersecting ?? true;
