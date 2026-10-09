@@ -5,6 +5,6 @@
   "mode": "inproc",
   "url": "http://localhost:8102",
   "module": "agents.prep.app",
-  "implementation": "Real Prep Manager (ported from Round 2 OpsConsole). AI-observes/rules-decide: Gemini vision describes what is visible, a deterministic engine emits PASS/FAIL/UNCERTAIN per FBA prep clause (rules.py). One batched model call per unit; fails open to UNCERTAIN when vision is unavailable.",
-  "notes": "In-process Python port. Set GEMINI_API_KEY (or GOOGLE_API_KEY) for live vision; without a key the agent still runs and returns honest UNCERTAIN records. Optional PREP_MODEL env overrides the Gemini model (default gemini-2.5-flash)."
+  "implementation": "Real Prep Manager (ported from Round 2 OpsConsole). AI-observes/rules-decide: a vision model (Groq by default, same settings as Returns: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_GROQ) describes what is visible, a deterministic engine emits PASS/FAIL/UNCERTAIN per FBA prep clause (rules.py). One model call per group of up to 3 photos (one call for most units); fails open to UNCERTAIN when vision is unavailable.",
+  "notes": "In-process Python port. Moved from Gemini to the pod's Groq vision model because Gemini keys were blocked for the test project. Without a key the agent still runs and returns honest UNCERTAIN records. Groq's vision model takes at most 3 images per request, so a unit with more photos is sent in groups and the observations are merged (a decisive observation beats cant_tell, then higher confidence, then not_met)."
 }

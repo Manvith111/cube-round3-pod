@@ -58,10 +58,26 @@ def other_org(org: str) -> str:
     return next(o for o in captures.ORGS if o != org)
 
 
-def build_case(org: str, unit: str) -> dict:
-    """The same case orchestration/api.py builds for POST /workflows (route and returned from the sample data)."""
-    return {"org_id": org, "unit_id": unit, "route": sample_data.route(unit, org),
+ROUTES = ("mfn", "fba", "unknown")
+
+
+def build_case(org: str, unit: str, overrides: dict | None = None) -> dict:
+    """The same case orchestration/api.py builds for POST /workflows (route and returned from the sample data).
+
+    `overrides` (optional, used by the Next.js frontend for units that are not in the sample data) may set
+    `route` and `returned`. Nothing else can be overridden."""
+    case = {"org_id": org, "unit_id": unit, "route": sample_data.route(unit, org),
             "returned": sample_data.has("returns", unit, org)}
+    overrides = overrides or {}
+    if overrides.get("route") is not None:
+        if overrides["route"] not in ROUTES:
+            raise captures.CaptureError(f"route must be one of {list(ROUTES)}, not {overrides['route']!r}")
+        case["route"] = overrides["route"]
+    if overrides.get("returned") is not None:
+        if not isinstance(overrides["returned"], bool):
+            raise captures.CaptureError("returned must be true or false")
+        case["returned"] = overrides["returned"]
+    return case
 
 
 class PairFilter:
@@ -185,12 +201,12 @@ def new_run_id() -> str:
 
 
 def execute(mode: str, stage: str, org: str, unit: str, test: str | None = None, pair: int | None = None,
-            run_id: str | None = None, on_event=None) -> dict:
+            run_id: str | None = None, on_event=None, case_overrides: dict | None = None) -> dict:
     """Run the orchestrator. `on_event(dict)` (optional) is called as things happen: stage_start / stage_end from the
     recorder, plus whatever progress events an agent reports through its `progress_hook`."""
     mode, stage, org, unit = validate(mode, stage, org, unit, test, pair)
     run_org = other_org(org) if test == "wrong_company" else org
-    case = build_case(run_org, unit)
+    case = build_case(run_org, unit, case_overrides)
     flow = load_flow(flow_path())
     if mode == "single":
         step = next((s for s in flow["steps"] if s["stage"] == stage), None)

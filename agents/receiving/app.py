@@ -32,7 +32,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from shared.utils import sample_data
+from shared.utils import groq_vision, sample_data
 from shared.utils.records import build_output, build_record, check, pending_output, rollup
 from shared.utils.server import make_app
 from shared.utils.stubs import photos, verdict_from
@@ -195,6 +195,11 @@ def _call_model(model: str, key: str, row: dict, data: bytes, mime: str) -> tupl
     """One vision call for one photo through an OpenAI-compatible endpoint (Groq by default).
     Returns (observation, usage). Raises RuntimeError("HTTP 4xx: message"), never containing the key."""
     base = (os.environ.get("VLM_BASE_URL") or "").strip().rstrip("/") or DEFAULT_BASE_URL
+    groq_vision.check_image(data)  # empty / corrupt: a RuntimeError before any call, handled like any model error
+    ck = groq_vision.cache_key(model, base, SYSTEM, _user_prompt(row), mime, data)
+    if (hit := groq_vision.cache_get(ck)) is not None:  # same photo, prompt and model as an earlier call
+        groq_vision.log_call("receiving", True, model=model)
+        return hit[0], {"prompt_tokens": 0, "output_tokens": 0}
     body = {"model": model, "temperature": 0, "max_completion_tokens": 4096,
             "messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": [
@@ -240,7 +245,10 @@ def _call_model(model: str, key: str, row: dict, data: bytes, mime: str) -> tupl
         except ValueError as exc:
             raise RuntimeError(f"unreadable model output: {exc}") from None
         usage = payload.get("usage") or {}
-        return obs, {"prompt_tokens": usage.get("prompt_tokens"), "output_tokens": usage.get("completion_tokens")}
+        used = {"prompt_tokens": usage.get("prompt_tokens"), "output_tokens": usage.get("completion_tokens")}
+        groq_vision.cache_put(ck, (obs, used))
+        groq_vision.log_call("receiving", False, {"input_tokens": used["prompt_tokens"], "output_tokens": used["output_tokens"]}, model)
+        return obs, used
     raise RuntimeError(last)
 
 

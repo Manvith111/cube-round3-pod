@@ -1,12 +1,12 @@
 """Prep Manager — agent entry point (Round 3 contract adapter).
 
 Ported from the Round 2 OpsConsole Prep Manager. The design is unchanged:
-**AI observes, rules decide.** Gemini (vision.py) only describes what is visible; the
+**AI observes, rules decide.** A vision model (vision.py: Groq, or any OpenAI-compatible endpoint) only describes what is visible; the
 deterministic engine here (`evaluate`) turns observations into PASS / FAIL / UNCERTAIN
 by fixed logic, citing an exact rule clause per check (rules.py). Same observations in,
 same verdicts out.
 
-Contract: reads an Agent Input, runs ONE batched model call per unit, returns an Agent
+Contract: reads an Agent Input, runs one model call per group of up to 3 photos (one call for most units), returns an Agent
 Output whose Evidence Record is built with shared.utils.records. Fails open: any model
 error yields UNCERTAIN checks (never an invented verdict), and an unexpected crash yields
 a pending record via make_app. Tenancy: the record is bound to request.subject.org_id and
@@ -227,7 +227,7 @@ def handle(request: dict) -> dict:
     if prev:
         verdict = effective_verdict(request, prev) if prev else verdict
 
-    model = {"name": vision["model"], "version": "1", "provider": ("google" if vision["available"] else None),
+    model = {"name": vision["model"], "version": "1", "provider": vision.get("provider"),
              "prompt_version": PROMPT_VERSION, "calls": vision["calls"], "cost_usd": None}
 
     record = build_record(

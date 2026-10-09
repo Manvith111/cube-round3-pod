@@ -5,6 +5,6 @@
   "mode": "inproc",
   "url": "http://localhost:8105",
   "module": "agents.recovery.app",
-  "implementation": "Round 2 Recovery Manager adapter with charge-level evidence decisions, optional one-call-per-unit Gemini review, tenancy checks, and fail-open pending outputs",
-  "notes": "In-process Python adapter; exposes /health and /run through the shared FastAPI factory."
+  "implementation": "Round 2 Recovery Manager adapter with charge-level evidence decisions, optional one-call-per-unit model review (Groq by default, same settings as Returns: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_GROQ), tenancy checks, and fail-open pending outputs",
+  "notes": "In-process Python adapter; exposes /health and /run through the shared FastAPI factory. Moved from Gemini to the pod's Groq model. As before, the rules decide every charge and the model's reply is not used to change a verdict."
 }

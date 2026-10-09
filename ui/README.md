@@ -18,15 +18,60 @@ Open http://127.0.0.1:8200. Change the port with `UI_PORT`.
 
 The server listens on `127.0.0.1` only and has **no login**. Do not expose it. It reads `.env` in the repo root when it starts, so restart it after editing `.env`.
 
-Extra packages used by some agents (not in `requirements.txt`, install into the venv only): `openai`, `pydantic-settings`, `tenacity`, `python-dotenv` (Returns), `google-genai` (Pack, Recovery).
+Extra packages used by some agents (not in `requirements.txt`, install into the venv only): `openai`, `pydantic-settings`, `tenacity`, `python-dotenv` (Returns). Prep, Pack and Recovery no longer need `google-genai`.
+
+## Next.js frontend (experiment)
+
+`ui/experiments/shyam-web/` is a Next.js front end (from the `shyam` branch) that runs the **same backend** instead of spawning Python itself.
+
+### Start both servers
+
+Open two PowerShell terminals. The backend must be running before you use the frontend.
+
+```powershell
+# Terminal 1: backend, from the repo root  ->  http://127.0.0.1:8200
+cd C:\path\to\cube-round3-pod
+.venv\Scripts\python.exe -m ui.server
+
+# Terminal 2: frontend  ->  http://127.0.0.1:3000
+cd C:\path\to\cube-round3-pod\ui\experiments\shyam-web
+npm.cmd install          # first time only
+npm.cmd run dev
+```
+
+If PowerShell says "running scripts is disabled", keep using `npm.cmd` (as above). Pages:
+
+| URL | What it is |
+|---|---|
+| http://127.0.0.1:3000/ | Landing page |
+| http://127.0.0.1:3000/lab | Test Pipeline: pick a track and unit, add images, run, see results (the Pod Test Lab in the new design) |
+| http://127.0.0.1:3000/pipeline | Pipeline Trace: run a unit and follow the stages |
+| http://127.0.0.1:8200/ | The original test page, served by the backend |
+
+Set `$env:LOG_LEVEL = "INFO"` before starting the backend to see the per-call log lines (cache hit/miss and token usage). `POD_BACKEND_URL` tells the frontend where the backend is (default `http://127.0.0.1:8200`).
+
+### Stop and restart
+
+Press Ctrl+C in the terminal of each server. Restart the **backend** after any `.env` change (it reads `.env` only at startup); the frontend hot-reloads and normally needs no restart.
+
+If a start fails with "address already in use", an earlier copy is still running. Stop whatever holds the port, then start again:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8200 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }   # backend
+Get-NetTCPConnection -LocalPort 3000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }   # frontend
+```
+
+### How it works
+
+Its `app/api/*` routes only forward to the backend (`POD_BACKEND_URL`, default `http://127.0.0.1:8200`). Pressing run starts `POST /api/run/start`, then the page follows `GET /api/run/{id}/progress`; the GSAP rail moves on the real `stage_start` / `stage_end` events. The backend gained `GET /api/cases`, `GET /api/runs` and an optional `case` (`route`, `returned`) on `/api/run/start`; nothing else about it changed. Both servers listen on `127.0.0.1` only and have no login.
 
 ## Settings (`.env`, names only)
 
 | Variable | Used by |
 |---|---|
-| `VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL_GROQ` | Returns and Receiving (an OpenAI-compatible vision endpoint, Groq by default) |
-| `GEMINI_API_KEY` | Prep, Pack, Recovery |
-| `VLM_MODEL` | Pack's Gemini model name. The UI also copies it to `PREP_MODEL` (Prep) and `MODEL_NAME` (Recovery) |
+| `VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL_GROQ` | All five agents: Receiving, Prep, Pack, Returns, Recovery (an OpenAI-compatible vision endpoint, Groq by default) |
+| `VLM_MAX_IMAGES`, `VLM_TIMEOUT_SECONDS` | Optional. Photos per request (default 3, the limit of Groq's vision model) and the per-call timeout (default 60 s) |
+| `GEMINI_API_KEY`, `VLM_MODEL` | No longer used |
 | `GROQ_API_KEY` | copied to `VLM_API_KEY` by the UI if `VLM_API_KEY` is not set |
 
 Keys stay on the server. They are never sent to the browser or printed.

@@ -63,6 +63,22 @@ Run an agent as its own service:
 curl localhost:8102/health          # then set "mode": "http" in agents/prep/agent.json
 ```
 
+### Run the test UI (backend + web frontend)
+
+Two servers, each in its own terminal (Windows PowerShell). Full details, stopping and restarting: [`ui/README.md`](ui/README.md).
+
+```powershell
+# 1. backend, from the repo root  ->  http://127.0.0.1:8200  (original test page)
+.venv\Scripts\python.exe -m ui.server
+
+# 2. web frontend  ->  http://127.0.0.1:3000  (landing page, /lab Test Pipeline, /pipeline Pipeline Trace)
+cd ui\experiments\shyam-web
+npm.cmd install        # first time only
+npm.cmd run dev
+```
+
+The backend reads `.env` (`VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL_GROQ`) only when it starts, so restart it after changing a key. The frontend needs the backend running.
+
 ## Where participants put their agents
 
 `agents/<stage>/` (`app.py` exposes `handle()`; `agent.json` describes your agent). Shared areas need Pod-level coordination: `orchestration/`, `shared/`, `tests/`, `docs/`. See [`PARTICIPANT-GUIDE.md`](PARTICIPANT-GUIDE.md).

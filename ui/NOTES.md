@@ -43,3 +43,17 @@
 - Free-tier Gemini limits are unofficial figures from a third-party page; not verified on the key.
 - Should the Groq vision model be the default for Receiving, or should Gemini return once a working key exists?
 - Which Prep image should be used for the Prep test?
+
+## Prep, Pack and Recovery moved from Gemini to Groq (2026-10-09)
+
+Done at the Pod lead's request, because Gemini keys were blocked for the test project. All five agents now use one provider and the same settings (`VLM_API_KEY`, `VLM_BASE_URL`, `VLM_MODEL_GROQ`). Files changed outside `ui/`:
+
+- `shared/utils/groq_vision.py` (new): one OpenAI-compatible chat call with the same retry and rate-limit handling as Receiving. The key goes in a header only.
+- `agents/prep/vision.py`, `agents/pack/app.py`, `agents/recovery/app.py`: the Gemini call is replaced; the rules engines are unchanged. `agent.json` of each, `.env.example` and `ui/README.md` updated. `ui/envfile.py` no longer copies `VLM_MODEL` to `PREP_MODEL` / `MODEL_NAME` (nothing reads them now).
+- **Groq's vision model takes at most 3 images per request** (from Groq's docs). Prep and Pack now send photos in groups of 3 (`VLM_MAX_IMAGES`) and merge the observations cautiously; a unit with 4 photos makes 2 calls. This departs from the old one-call-per-unit rule. Merge rules: a sighting in any group counts as seen; two confident counts that disagree give no count (UNCERTAIN); Prep keeps the decisive, most confident observation per check.
+- A model told to answer in JSON is not held to a schema the way Gemini was, so Prep and Pack check every value first; anything odd becomes the cautious value, never a PASS or FAIL.
+- **Bug fixed in Pack** (it affected the Gemini path too): check names such as `line.presence.SKU-1` do not match the Evidence schema (`^[a-z][a-z0-9_]*$`), so the orchestrator rejected every real Pack record as `invalid_output`. They are now `line_presence_sku_1`. Also `.webp` photos are no longer labelled `image/png`.
+- Pack and Prep no longer report a cost (`cost_usd` is null): the old figure was Gemini pricing.
+- Recovery makes the same single call as before; as before, its rules decide every charge and the model's reply does not change a verdict.
+
+Verified with the real model (`qwen/qwen3.8-27b`) through the UI backend: Prep on UNIT-0014 (1 call), Pack on UNIT-0008 (4 photos, 2 calls, record accepted), Recovery on UNIT-0014 (1 call). The repo's tests give the same 6 failures as before this change. Not verified: answer quality (for example, whether Pack's "extra item" FAIL on UNIT-0008 is right), and a full workflow with every agent answering.

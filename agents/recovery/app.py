@@ -2,17 +2,15 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
-from shared.utils import sample_data
+from shared.utils import groq_vision, sample_data
 from shared.utils.records import build_output, build_record, check, pending_output, utcnow
 from shared.utils.server import make_app
 from shared.utils.stubs import effective_verdict, previous
 
 STAGE = "recovery"
 AGENT_ID = "recovery-manager@1"
-MODEL_NAME = os.environ.get("MODEL_NAME", "gemini-2.5-flash")
 
 
 def _charge_lines(request: dict) -> list[dict]:
@@ -61,22 +59,24 @@ def _position(line: dict, request: dict) -> tuple[str, str, list[str]]:
 
 def _run_batched_model(request: dict, lines: list[dict]) -> dict:
     """Run one optional model call for the complete unit, never one call per charge."""
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
+    if not groq_vision.api_key():
         return {"name": "round2-recovery-rules", "version": "1", "provider": None, "calls": 0, "cost_usd": 0}
     try:
-        from google import genai
-
-        client = genai.Client(api_key=api_key)
         prompt = {
             "subject": request["subject"],
             "charges": lines,
             "previous_evidence": request.get("previous_evidence", []),
             "instruction": "Review all charges for this unit in one call. Preserve UNCERTAIN when evidence is insufficient.",
         }
-        client.models.generate_content(model=MODEL_NAME, contents=json.dumps(prompt, sort_keys=True))
-        return {"name": MODEL_NAME, "version": "1", "provider": "google", "calls": 1, "cost_usd": 0}
-    except Exception as exc:
+        # Same call as before, on the pod's common provider. As before, the rules above decide every verdict; the
+        # model's reply is not used to change one.
+        groq_vision.complete(
+            "You review marketplace fee charges against warehouse evidence. Never invent evidence; "
+            "say UNCERTAIN when the evidence is insufficient.",
+            json.dumps(prompt, sort_keys=True), None, max_tokens=1024)
+        return {"name": groq_vision.model_name(), "version": "1", "provider": groq_vision.provider(), "calls": 1,
+                "cost_usd": None}
+    except groq_vision.VisionError as exc:
         raise RuntimeError(f"recovery model call failed: {exc}") from exc
 
 

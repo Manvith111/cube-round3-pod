@@ -5,6 +5,6 @@
   "mode": "inproc",
   "url": "http://localhost:8103",
   "module": "agents.pack.app",
-  "implementation": "Gemini vision-language model (gemini-2.5-flash) observes an open box photo and reports item presence, quantity and unlisted items as structured JSON. A deterministic rules engine converts the observation into PASS/FAIL/UNCERTAIN per check_key. Falls back to CSV replay when no images are supplied (test/stub mode). Ported from Round 2 repo: https://github.com/Shyamyemuka/cube26-pck-0105-shyamyemuka",
-  "notes": "Requires GEMINI_API_KEY env var for the real (vision) path. Without it, the agent replays Round 2 sample CSV data and tests pass."
+  "implementation": "A vision-language model (Groq by default, same settings as Returns: VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_GROQ) observes the open-box photos and reports item presence, quantity and unlisted items as JSON. A deterministic rules engine converts the observation into PASS/FAIL/UNCERTAIN per check_key. Falls back to CSV replay when no images are supplied (test/stub mode). Ported from Round 2 repo: https://github.com/Shyamyemuka/cube26-pck-0105-shyamyemuka",
+  "notes": "Moved from Gemini to the pod's Groq vision model. Needs VLM_API_KEY and VLM_MODEL_GROQ for the real (vision) path; without a key the agent replays Round 2 sample CSV data and tests pass. Groq's vision model takes at most 3 images per request, so a box with more photos is sent in groups (VLM_MAX_IMAGES) and the observations merged cautiously: a sighting in any group counts, two confident counts that disagree give no count (UNCERTAIN). This departs from the old one-call-per-box rule. Also fixes .webp photos being labelled image/png."
 }

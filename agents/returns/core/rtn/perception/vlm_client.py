@@ -13,6 +13,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
 
@@ -20,6 +21,7 @@ from openai import APIError, APITimeoutError, OpenAI
 from pydantic import ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from shared.utils import groq_vision
 from agents.returns.core.rtn.config import settings
 from agents.returns.core.rtn.perception.prompt_builder import SYSTEM_INSTRUCTIONS, build_user_content, response_json_schema
 from agents.returns.core.rtn.schemas.input import UnitInput
@@ -88,6 +90,18 @@ class VLMClient:
         )
 
     def _call_with_retries(self, unit: UnitInput) -> str:
+        user_content = build_user_content(unit)
+        if isinstance(user_content, list):  # an empty / corrupt image fails open here, before any API call
+            for part in user_content:
+                if isinstance(part, dict) and part.get("type") == "image_url":
+                    groq_vision.check_data_url(part["image_url"]["url"])
+        ck = groq_vision.cache_key(self._model, settings.vlm_base_url, SYSTEM_INSTRUCTIONS,
+                                   json.dumps(user_content, sort_keys=True, default=str),
+                                   json.dumps(response_json_schema(), sort_keys=True, default=str))
+        if (hit := groq_vision.cache_get(ck)) is not None:  # same photos, prompt and model as an earlier call
+            groq_vision.log_call("returns", True, model=self._model)
+            return hit
+
         @retry(
             reraise=True,
             stop=stop_after_attempt(settings.vlm_max_retries + 1),
@@ -100,7 +114,7 @@ class VLMClient:
                 timeout=settings.vlm_timeout_seconds,
                 messages=[
                     {"role": "system", "content": SYSTEM_INSTRUCTIONS},
-                    {"role": "user", "content": build_user_content(unit)},
+                    {"role": "user", "content": user_content},
                 ],
                 response_format={
                     "type": "json_schema",
@@ -114,6 +128,14 @@ class VLMClient:
             content = completion.choices[0].message.content
             if not content:
                 raise ValueError("empty response content from VLM provider")
+            u = getattr(completion, "usage", None)
+            groq_vision.log_call("returns", False, {"input_tokens": getattr(u, "prompt_tokens", None),
+                                                    "output_tokens": getattr(u, "completion_tokens", None)}, self._model)
+            try:  # only an answer that also passes the schema is reused; an invalid one is an error and is never cached
+                VLMResponse.model_validate_json(content)
+                groq_vision.cache_put(ck, content)
+            except ValidationError:
+                pass
             return content
 
         return _do_call()

@@ -23,20 +23,14 @@ def _value(raw: str) -> str:
 
 
 def apply_model_aliases() -> list[str]:
-    """Map one Gemini model name onto the names the Pod's agents actually read. Names only are returned.
+    """Small name mappings so one .env works for every agent. Names only are returned.
 
-    * VLM_MODEL is the Gemini model name (Pack reads it directly). The same name is copied to PREP_MODEL (Prep) and
-      MODEL_NAME (Recovery); both are read when the agent module is first imported, which happens after this runs.
-    * Returns reads VLM_MODEL_GROQ (its own variable), so it does not clash with VLM_MODEL.
-    * GROQ_API_KEY -> VLM_API_KEY (Returns) when VLM_API_KEY is not already set.
-    Receiving hardcodes its model; no setting can change it (see ui/NOTES.md).
+    All five agents now use one provider (Groq, or any OpenAI-compatible endpoint) with the same three settings:
+    VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_GROQ. Gemini is no longer used, so the old mapping of the Gemini model name
+    (VLM_MODEL) onto PREP_MODEL / MODEL_NAME is gone: nothing reads those names any more.
+    * GROQ_API_KEY -> VLM_API_KEY when VLM_API_KEY is not already set.
     """
     notes = []
-    gemini = os.environ.get("VLM_MODEL", "").strip()
-    if gemini:
-        os.environ["PREP_MODEL"] = gemini
-        os.environ["MODEL_NAME"] = gemini
-        notes.append("VLM_MODEL (Gemini) -> PREP_MODEL, MODEL_NAME")
     if not os.environ.get("VLM_API_KEY", "").strip() and os.environ.get("GROQ_API_KEY", "").strip():
         os.environ["VLM_API_KEY"] = os.environ["GROQ_API_KEY"].strip()
         notes.append("GROQ_API_KEY -> VLM_API_KEY")

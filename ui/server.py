@@ -20,7 +20,7 @@ from orchestration.clients import load_manifest
 from orchestration.orchestrator import discover_inputs, load_flow
 from orchestration.store import EvidenceConflict
 
-from . import captures, envfile, runner
+from . import captures, envfile, runner, trace_view
 
 ENV_LOADED = envfile.load()  # names only; values are never printed or returned
 ENV_ALIASES = envfile.apply_model_aliases()
@@ -30,6 +30,10 @@ PORT = int(os.environ.get("UI_PORT", "8200"))
 
 app = FastAPI(title="CUBE Pod test UI")
 app.mount("/static", StaticFiles(directory=UI_DIR / "static"), name="static")
+# Pages being tried out live in ui/experiments/ and open at http://127.0.0.1:8200/experiments/<file>.
+# Same origin as the API, so they can call /api/... without extra setup. Only that folder is served.
+(UI_DIR / "experiments").mkdir(exist_ok=True)
+app.mount("/experiments", StaticFiles(directory=UI_DIR / "experiments", html=True), name="experiments")
 
 
 @app.middleware("http")
@@ -144,7 +148,7 @@ LIVE_LOCK = threading.Lock()
 LIVE_KEEP = 30
 
 
-def _worker(run_id: str, args: tuple) -> None:
+def _worker(run_id: str, args: tuple, case_overrides: dict | None = None) -> None:
     state = LIVE[run_id]
 
     def on_event(event: dict) -> None:
@@ -152,7 +156,7 @@ def _worker(run_id: str, args: tuple) -> None:
             state["events"].append({"n": len(state["events"]), "at": time.time(), **event})
 
     try:
-        state["result"] = runner.execute(*args, run_id=run_id, on_event=on_event)
+        state["result"] = runner.execute(*args, run_id=run_id, on_event=on_event, case_overrides=case_overrides)
     except Exception as exc:  # noqa: BLE001 - shown to the user as the run's error, never swallowed
         state["error"] = f"{type(exc).__name__}: {exc}"
     finally:
@@ -164,18 +168,22 @@ def run_start(body: dict) -> dict:
     """Start a run in the background and return at once. Follow it with GET /api/run/{id}/progress."""
     args = (body.get("mode", ""), body.get("stage", ""), body.get("org_id", ""), body.get("unit_id", ""),
             body.get("test") or None, body.get("pair"))
+    overrides = body.get("case") or None  # optional {route, returned}, for units that are not in the sample data
     try:
-        runner.validate(*args)
+        mode, stage, org, unit = runner.validate(*args)
+        case = runner.build_case(org, unit, overrides)
     except captures.CaptureError as exc:
         raise _bad(exc) from exc
+    flow = load_flow(runner.flow_path())
     run_id = runner.new_run_id()
     with LIVE_LOCK:
         for old in list(LIVE)[:-LIVE_KEEP]:
             if LIVE[old]["done"]:
                 del LIVE[old]
         LIVE[run_id] = {"events": [], "done": False, "result": None, "error": None}
-    threading.Thread(target=_worker, args=(run_id, args), daemon=True).start()
-    return {"run_id": run_id}
+    threading.Thread(target=_worker, args=(run_id, args, overrides), daemon=True).start()
+    # `plan` lets a screen draw every stage up front (which will run, which are skipped and why).
+    return {"run_id": run_id, "case": case, "plan": trace_view.plan(flow, case) if mode == "full" else None}
 
 
 @app.get("/api/run/{run_id}/progress")
@@ -187,8 +195,22 @@ def run_progress(run_id: str, after: int = 0) -> dict:
         events = state["events"][max(after, 0):]
         nxt = len(state["events"])
     done = state["done"]
+    trace = None
+    if done and state["result"] is not None and state["result"]["request"]["mode"] == "full":
+        trace = trace_view.trace(runner.load_run(run_id))
     return {"events": events, "next": nxt, "done": done,
-            "result": state["result"] if done else None, "error": state["error"] if done else None}
+            "result": state["result"] if done else None, "error": state["error"] if done else None, "trace": trace}
+
+
+@app.get("/api/cases")
+def cases() -> dict:
+    return {"cases": trace_view.cases()}
+
+
+@app.get("/api/runs")
+def list_runs() -> dict:
+    """Recent full-workflow runs, newest first, each with its trace (what the pipeline page loads from history)."""
+    return {"history": trace_view.list_runs()}
 
 
 @app.get("/api/runs/{run_id}")
