@@ -47,6 +47,12 @@ const BACKGROUND_SHADER_STYLES = `
   filter: invert(1) hue-rotate(180deg) contrast(1.15) opacity(0.3);
   mix-blend-mode: multiply;
   pointer-events: none;
+  transition: opacity 0.5s ease, filter 0.5s ease;
+}
+
+html.dark .hero-video-invert {
+  filter: invert(0) hue-rotate(0deg) contrast(1.1) opacity(0.85) !important;
+  mix-blend-mode: screen !important;
 }
 
 .floating-shade {
@@ -55,6 +61,12 @@ const BACKGROUND_SHADER_STYLES = `
   filter: blur(80px);
   pointer-events: none;
   opacity: 0.18;
+  transition: opacity 0.5s ease, background 0.5s ease;
+}
+
+html.dark .floating-shade {
+  opacity: 0.35 !important;
+  filter: blur(90px) !important;
 }
 
 .shade-1 {
@@ -82,6 +94,18 @@ const BACKGROUND_SHADER_STYLES = `
   bottom: -150px;
   left: 30%;
   animation: bg-float-3 50s ease-in-out infinite alternate;
+}
+
+html.dark .shade-1 {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 70%) !important;
+}
+
+html.dark .shade-2 {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 70%) !important;
+}
+
+html.dark .shade-3 {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 70%) !important;
 }
 
 @keyframes bg-float-1 {

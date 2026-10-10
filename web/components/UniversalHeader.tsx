@@ -2,12 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function UniversalHeader() {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const pathname = usePathname();
-  const isPipeline = pathname === '/pipeline';
 
   return (
     <header className={`universal-site-header ${menuOpen ? 'menu-open' : ''}`}>
@@ -26,7 +23,7 @@ export default function UniversalHeader() {
       <Link
         href="/"
         className="universal-logo"
-        aria-label="Commerce Pipeline - Operational AI Infrastructure"
+        aria-label="Pancha Pandava - Operational AI Infrastructure"
       >
         <svg
           className="universal-logo-mark"
@@ -43,7 +40,7 @@ export default function UniversalHeader() {
           </g>
         </svg>
         <span className="universal-brand-text">
-          Commerce<span className="universal-logo-suffix">.ai</span>
+          Pancha Pandava
         </span>
       </Link>
 
@@ -63,23 +60,14 @@ export default function UniversalHeader() {
         </Link>
       </nav>
 
-      {/* Right: Header CTA button & Mobile burger */}
+      {/* Right: Constant Header CTA button & Mobile burger */}
       <div className="universal-header-right">
-        {isPipeline ? (
-          <Link
-            href="/"
-            className="universal-btn universal-btn-solid"
-          >
-            <span>Back</span>
-          </Link>
-        ) : (
-          <Link
-            href="/pipeline"
-            className="universal-btn universal-btn-solid"
-          >
-            <span>Launch Pipeline</span>
-          </Link>
-        )}
+        <Link
+          href="/pipeline"
+          className="universal-btn universal-btn-solid universal-header-cta"
+        >
+          <span>Launch Pipeline</span>
+        </Link>
 
         <button
           type="button"
@@ -123,12 +111,22 @@ const UNIVERSAL_HEADER_STYLES = `
   letter-spacing: -0.03em;
   color: #0F172A;
   text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+html.dark .universal-logo {
+  color: #FFFFFF !important;
 }
 
 .universal-logo-mark {
   color: #0F172A;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, color 0.3s ease;
 }
+
+html.dark .universal-logo-mark {
+  color: #FFFFFF !important;
+}
+
 .universal-logo:hover .universal-logo-mark {
   transform: rotate(-15deg);
 }
@@ -137,11 +135,21 @@ const UNIVERSAL_HEADER_STYLES = `
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   font-weight: 600;
   color: #0F172A;
+  transition: color 0.3s ease;
+}
+
+html.dark .universal-brand-text {
+  color: #FFFFFF !important;
 }
 
 .universal-logo-suffix {
   font-weight: 400;
   color: #64748B;
+  transition: color 0.3s ease;
+}
+
+html.dark .universal-logo-suffix {
+  color: #94A3B8 !important;
 }
 
 .universal-nav {
@@ -173,6 +181,13 @@ const UNIVERSAL_HEADER_STYLES = `
   font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+html.dark .universal-nav-pill {
+  border: 1px solid rgba(198, 198, 198, 0.55) !important;
+  background: linear-gradient(105deg, #050505 0%, #2a2a2a 48%, #4a4a4a 100%) !important;
+  color: #F3F3F3 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
 .universal-nav-pill::before {
   content: "";
   position: absolute;
@@ -193,11 +208,19 @@ const UNIVERSAL_HEADER_STYLES = `
   transform: translateY(-1px);
 }
 
+html.dark .universal-nav-pill:hover {
+  border-color: rgba(235, 235, 235, 0.9) !important;
+  background: linear-gradient(105deg, #111111 0%, #3a3a3a 45%, #6a6a6a 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 18px rgba(200, 210, 230, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
 .universal-header-right {
   display: flex;
   align-items: center;
   gap: 12px;
   justify-self: end;
+  padding-right: 4.5rem; /* Generous gap so Launch Pipeline CTA is well clear of the hanging PullCord */
 }
 
 .universal-btn {
@@ -228,11 +251,24 @@ const UNIVERSAL_HEADER_STYLES = `
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+html.dark .universal-btn-solid {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 48%, #E2E8F0 100%) !important;
+  color: #0F172A !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
 .universal-btn-solid:hover {
   background: linear-gradient(180deg, #1E293B 0%, #334155 42%, #1E293B 100%);
   border-color: #334155;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
+}
+
+html.dark .universal-btn-solid:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 42%, #CBD5E1 100%) !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25), inset 0 1px 0 #FFFFFF !important;
 }
 
 .universal-burger {
@@ -250,12 +286,21 @@ const UNIVERSAL_HEADER_STYLES = `
   z-index: 60;
 }
 
+html.dark .universal-burger {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+}
+
 .universal-burger-bar {
   width: 16px;
   height: 1.5px;
   background: #0F172A;
   border-radius: 1px;
   transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+html.dark .universal-burger-bar {
+  background: #FFFFFF !important;
 }
 
 .universal-menu-backdrop {
@@ -291,6 +336,9 @@ const UNIVERSAL_HEADER_STYLES = `
     transform: translateY(-8px);
     transition: all 0.28s ease;
   }
+  html.dark .universal-nav {
+    background: rgba(15, 23, 42, 0.96) !important;
+  }
   .menu-open .universal-nav {
     opacity: 1;
     visibility: visible;
@@ -313,3 +361,4 @@ const UNIVERSAL_HEADER_STYLES = `
   }
 }
 `;
+

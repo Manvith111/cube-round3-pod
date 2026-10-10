@@ -1106,4 +1106,166 @@ const VESPER_INVERTED_STYLES = `
     width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+   DARK MODE OVERRIDES (Exact Vesper.ai Palette: Pure #000, white/zinc glass, #fff accents)
+   -------------------------------------------------------------------------- */
+html.dark .vesper-inverted-root {
+  color: #FFFFFF !important;
+}
+
+html.dark .badge {
+  background: linear-gradient(90deg, #7d7d7d 0%, #2a2a2a 52%, #0a0a0a 100%) !important;
+  color: #F2F2F2 !important;
+  border: 0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark .badge-star {
+  color: #FFFFFF !important;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6)) !important;
+}
+
+html.dark .headline {
+  color: #FFFFFF !important;
+}
+
+html.dark .headline em {
+  color: #9A9A9A !important;
+}
+
+html.dark .lede {
+  color: #9A9A9A !important;
+}
+
+/* Vesper Solid: linear-gradient(180deg, #ffffff 0%, #e7e7e7 48%, #cfcfcf 100%) */
+html.dark .btn-solid {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E7E7E7 48%, #CFCFCF 100%) !important;
+  color: #111111 !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 0 22px rgba(255, 255, 255, 0.2) !important;
+}
+
+html.dark .btn-solid:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3F6FF 42%, #D5DEF2 100%) !important;
+  border-color: #F2F6FF !important;
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 0 26px rgba(255, 255, 255, 0.35), 0 8px 18px rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Vesper Ghost: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.5) 46%, rgba(150,170,200,0.1)) */
+html.dark .btn-ghost {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.5) 46%, rgba(150, 170, 200, 0.1)) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(198, 198, 198, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .btn-ghost:hover {
+  border-color: rgba(220, 230, 255, 0.8) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 24px rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark .stats {
+  color: #D8D8D8 !important;
+}
+
+html.dark .stat-label {
+  color: #E8E8E8 !important;
+}
+
+html.dark .content-drawer {
+  border-top-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+html.dark .section-tag {
+  color: #D8D8D8 !important;
+}
+
+html.dark .section-title {
+  color: #FFFFFF !important;
+}
+
+html.dark .section-desc {
+  color: #9A9A9A !important;
+}
+
+html.dark .card,
+html.dark .agent-card {
+  background: rgba(18, 18, 18, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75) !important;
+}
+
+html.dark .card:hover,
+html.dark .agent-card:hover {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.9) !important;
+}
+
+html.dark .card-title,
+html.dark .agent-title {
+  color: #FFFFFF !important;
+}
+
+html.dark .card-copy,
+html.dark .agent-copy {
+  color: #D8D8D8 !important;
+}
+
+html.dark .card-badge {
+  color: #E8E8E8 !important;
+}
+
+html.dark .agent-stage {
+  color: #9A9A9A !important;
+}
+
+html.dark .agent-scope {
+  background: rgba(35, 35, 35, 0.8) !important;
+  color: #D8D8D8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .agent-role {
+  color: #E8E8E8 !important;
+}
+
+html.dark .agent-proof {
+  border-top-color: rgba(255, 255, 255, 0.14) !important;
+  color: #9A9A9A !important;
+}
+
+html.dark .agent-proof span {
+  color: #FFFFFF !important;
+}
+
+html.dark .faq-item {
+  background: rgba(18, 18, 18, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .faq-q {
+  color: #FFFFFF !important;
+}
+
+html.dark .faq-a {
+  color: #D8D8D8 !important;
+}
+
+html.dark .ready-card {
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.92) 0%, rgba(30, 30, 30, 0.85) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8) !important;
+}
+
+html.dark .ready-card h3 {
+  color: #FFFFFF !important;
+}
+
+html.dark .ready-card p {
+  color: #9A9A9A !important;
+}
 `;
+

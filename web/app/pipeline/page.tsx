@@ -553,8 +553,20 @@ export default function PipelineTracePage() {
   }, [currentRun, historyRuns]);
 
   return (
-    <div className="space-y-10 pb-16 pt-8 w-full max-w-[1600px] mx-auto px-[10px] relative z-10 pipeline-transparent-root">
+    <div className="space-y-8 pb-16 pt-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pipeline-transparent-root">
       <style dangerouslySetInnerHTML={{ __html: PIPELINE_TRANSPARENT_STYLES }} />
+
+      {/* Back Navigation Bar: Clear gap below header, elegant back button */}
+      <div className="flex items-center justify-between pb-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/15 bg-white/70 dark:bg-black/60 backdrop-blur-md text-xs font-semibold text-slate-700 dark:text-white/90 hover:text-slate-950 dark:hover:text-white hover:border-slate-400 dark:hover:border-white/30 shadow-xs transition-all cursor-pointer group"
+          aria-label="Back to landing page"
+        >
+          <ArrowLeft className="w-4 h-4 stroke-[2.5] text-slate-500 dark:text-white/60 group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back</span>
+        </Link>
+      </div>
 
       {/* WORKFLOW CONTROLS & CASE SELECTOR */}
       <section className="rounded-[28px] neu-flat p-6 sm:p-8 space-y-5">
@@ -1333,49 +1345,228 @@ export default function PipelineTracePage() {
 }
 
 const PIPELINE_TRANSPARENT_STYLES = `
-/* Transparent Glassmorphic Overrides for Pipeline page — matches Landing page aesthetic */
+/* --------------------------------------------------------------------------
+   Unified Vesper Liquid-Glass & Monochrome Architecture for /pipeline
+   Ensures ALL boxes, buttons, and rectangles follow exact black, white, and
+   frosted translucent shades matching the landing page.
+   -------------------------------------------------------------------------- */
+
 .pipeline-transparent-root {
   background: transparent !important;
 }
 
+/* Light Mode: Frosted white glass with crisp obsidian borders & text */
 .pipeline-transparent-root .neu-flat {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(15, 23, 42, 0.1) !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
+  border-radius: 20px !important;
 }
 
 .pipeline-transparent-root .neu-pressed,
 .pipeline-transparent-root .neu-pressed-sm,
 .pipeline-transparent-root .neu-pressed-deep {
-  background: rgba(248, 250, 252, 0.65) !important;
+  background: rgba(248, 250, 252, 0.75) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid rgba(15, 23, 42, 0.09) !important;
 }
 
 .pipeline-transparent-root .neu-input,
 .pipeline-transparent-root select,
 .pipeline-transparent-root input {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #0F172A !important;
   backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  border: 1px solid rgba(15, 23, 42, 0.16) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Action Buttons in /pipeline: Exactly match Vesper Solid & Ghost buttons */
+.pipeline-transparent-root .neu-btn-highlight {
+  background: linear-gradient(180deg, #0F172A 0%, #1E293B 48%, #0F172A 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid #0F172A !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.pipeline-transparent-root .neu-btn-highlight:hover {
+  background: linear-gradient(180deg, #1E293B 0%, #334155 42%, #1E293B 100%) !important;
+  border-color: #334155 !important;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25) !important;
+}
+
+.pipeline-transparent-root .neu-btn-secondary {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.9)) !important;
+  color: #0F172A !important;
+  border: 1px solid rgba(15, 23, 42, 0.16) !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+}
+
+.pipeline-transparent-root .neu-btn-secondary:hover {
+  background: #FFFFFF !important;
+  border-color: rgba(15, 23, 42, 0.35) !important;
 }
 
 .pipeline-transparent-root .build-pipeline {
-  --bp-surface: rgba(255, 255, 255, 0.72) !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(15, 23, 42, 0.1) !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+  --bp-surface: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05) !important;
 }
 
 .pipeline-transparent-root .bg-white\\/75,
 .pipeline-transparent-root .bg-white\\/80 {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-radius: 20px !important;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode Overrides for Pipeline page: Exact Vesper Monochrome Glass
+   Pure black #000000 background with dark obsidian glass and white buttons
+   -------------------------------------------------------------------------- */
+html.dark .pipeline-transparent-root .neu-flat {
+  background: rgba(18, 18, 18, 0.78) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75) !important;
+  border-radius: 20px !important;
+}
+
+html.dark .pipeline-transparent-root .neu-pressed,
+html.dark .pipeline-transparent-root .neu-pressed-sm,
+html.dark .pipeline-transparent-root .neu-pressed-deep {
+  background: rgba(25, 25, 25, 0.65) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .pipeline-transparent-root .neu-input,
+html.dark .pipeline-transparent-root select,
+html.dark .pipeline-transparent-root input {
+  background: rgba(22, 22, 22, 0.85) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Dark Mode Action Buttons: Exact Vesper Solid White with Black Text */
+html.dark .pipeline-transparent-root .neu-btn-highlight {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E7E7E7 48%, #CFCFCF 100%) !important;
+  color: #111111 !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark .pipeline-transparent-root .neu-btn-highlight:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3F6FF 42%, #D5DEF2 100%) !important;
+  border-color: #F2F6FF !important;
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 0 26px rgba(255, 255, 255, 0.4), 0 8px 18px rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark .pipeline-transparent-root .neu-btn-secondary {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.5) 46%, rgba(150, 170, 200, 0.1)) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(198, 198, 198, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .pipeline-transparent-root .neu-btn-secondary:hover {
+  border-color: rgba(220, 230, 255, 0.8) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 24px rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark .pipeline-transparent-root .build-pipeline {
+  --bp-surface: rgba(18, 18, 18, 0.78) !important;
+  --bp-ink: #FFFFFF !important;
+  --bp-muted: #9A9A9A !important;
+  --bp-border: rgba(255, 255, 255, 0.14) !important;
+  --bp-ground: rgba(30, 30, 30, 0.6) !important;
+  --bp-line: rgba(255, 255, 255, 0.25) !important;
+  --bp-green: #FFFFFF !important;
+  --bp-green-fill: #E2E8F0 !important;
+  --bp-blue: #D8D8D8 !important;
+  --bp-blue-fill: #CBD5E1 !important;
+  background: rgba(18, 18, 18, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75) !important;
+  border-radius: 20px !important;
+}
+
+html.dark .pipeline-transparent-root .bp-header h2,
+html.dark .pipeline-transparent-root .bp-stats strong,
+html.dark .pipeline-transparent-root .bp-station-button>strong,
+html.dark .pipeline-transparent-root .bp-list-row strong,
+html.dark .pipeline-transparent-root .bp-log-header strong {
+  color: #FFFFFF !important;
+}
+
+html.dark .pipeline-transparent-root .bp-switch button[aria-pressed=true] {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+}
+
+html.dark .pipeline-transparent-root .bp-station-block polygon {
+  fill: #222222 !important;
+  stroke: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.dark .pipeline-transparent-root .bp-station-button .bp-station-icon {
+  color: #FFFFFF !important;
+}
+
+html.dark .pipeline-transparent-root .bp-station-button[data-status=passed] .bp-station-icon,
+html.dark .pipeline-transparent-root .bp-station-button[data-status=running] .bp-station-icon {
+  color: #FFFFFF !important;
+}
+
+html.dark .pipeline-transparent-root .bg-white\\/75,
+html.dark .pipeline-transparent-root .bg-white\\/80 {
+  background: rgba(18, 18, 18, 0.78) !important;
+  border-radius: 20px !important;
+}
+
+html.dark .pipeline-transparent-root h1,
+html.dark .pipeline-transparent-root h2,
+html.dark .pipeline-transparent-root h3,
+html.dark .pipeline-transparent-root h4 {
+  color: #FFFFFF !important;
+}
+
+html.dark .pipeline-transparent-root .text-slate-900,
+html.dark .pipeline-transparent-root .text-slate-800,
+html.dark .pipeline-transparent-root .text-slate-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .pipeline-transparent-root .text-slate-600,
+html.dark .pipeline-transparent-root .text-slate-500 {
+  color: #9A9A9A !important;
+}
+
+/* Badges and chips: Monochrome black, white, and silver */
+html.dark .pipeline-transparent-root .bg-emerald-100,
+html.dark .pipeline-transparent-root .bg-emerald-50,
+html.dark .pipeline-transparent-root .bg-amber-100,
+html.dark .pipeline-transparent-root .bg-amber-50,
+html.dark .pipeline-transparent-root .bg-blue-100 {
+  background: rgba(35, 35, 35, 0.9) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark .pipeline-transparent-root .text-emerald-800,
+html.dark .pipeline-transparent-root .text-emerald-600,
+html.dark .pipeline-transparent-root .text-amber-800,
+html.dark .pipeline-transparent-root .text-amber-600,
+html.dark .pipeline-transparent-root .text-blue-800 {
+  color: #FFFFFF !important;
 }
 `;

@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { PullCord } from 'pullcord';
+import 'pullcord/pullcord.css';
 
 export default function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const saved = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (saved === 'dark' || (!saved && prefersDark)) {
@@ -18,30 +21,35 @@ export default function ThemeToggle() {
     }
   }, []);
 
-  const toggle = () => {
-    if (isDark) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      setIsDark(true);
-    }
+  const handlePull = () => {
+    setIsDark((prev) => {
+      const next = !prev;
+      if (next) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+      return next;
+    });
   };
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <button
-      onClick={toggle}
-      title="Toggle Light / Dark Mode"
-      aria-label="Toggle Light / Dark Mode"
-      className="w-10 h-10 rounded-2xl neu-flat hover:neu-flat-hover flex items-center justify-center text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
-    >
-      {isDark ? (
-        <Sun className="w-4 h-4 stroke-[2.2] text-[#6BFF86]" />
-      ) : (
-        <Moon className="w-4 h-4 stroke-[2.2] text-[#773C30]" />
-      )}
-    </button>
+    <PullCord
+      onPull={handlePull}
+      pulled={isDark}
+      ariaLabel="Toggle Light / Dark Mode"
+      config={{
+        gravity: 1250,   // hang tension / fall speed
+        damping: 0.94,   // snappier retract
+        iterations: 20,  // rope stiffness
+        stretchMax: 26,  // pull travel past rest
+      }}
+    />
   );
 }

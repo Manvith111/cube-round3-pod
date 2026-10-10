@@ -6,8 +6,8 @@ import BackgroundShader from '@/components/BackgroundShader';
 import UniversalHeader from '@/components/UniversalHeader';
 
 export const metadata: Metadata = {
-  title: 'Commerce Multi-Agent Pipeline | Pod 8 System',
-  description: 'Enterprise multi-agent pre-seal & post-sale commerce integrity system. Pod 8 orchestrated verification with cryptographic evidence chains.',
+  title: 'Pancha Pandava — Operational AI Infrastructure',
+  description: 'Pancha Pandava: Autonomous Five-Agent Multi-Tenant Physical Verification & Financial Audit Pipeline.',
   icons: {
     icon: '/icon.png',
   },
@@ -31,6 +31,7 @@ export default function RootLayout({
       </head>
       <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white">
         <BackgroundShader />
+        <ThemeToggle />
         <UniversalHeader />
         
         <main className="flex-1 w-full mx-auto relative z-10">

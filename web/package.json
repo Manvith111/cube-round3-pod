@@ -10,8 +10,13 @@
   },
   "dependencies": {
     "@types/three": "^0.186.0",
+    "framer-motion": "^12.43.0",
     "lucide-react": "^0.475.0",
+    "motion": "^12.43.0",
+    "motion-dom": "^12.43.0",
+    "motion-utils": "^12.39.0",
     "next": "16.3.7",
+    "pullcord": "^0.1.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "^0.186.1"
