@@ -72,46 +72,45 @@ export default function CameraSettings({ settings, onChange, onClose }: CameraSe
 
   function statusIcon(stage: string) {
     const s = tests[stage];
-    if (s === 'testing') return <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />;
-    if (s === 'ok') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />;
+    if (s === 'testing') return <Loader2 className="w-3.5 h-3.5 animate-spin text-[#773C30]" />;
+    if (s === 'ok') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />;
     if (s === 'fail') return <XCircle className="w-3.5 h-3.5 text-red-500" />;
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-            <Wifi className="w-4 h-4 text-amber-600" /> Camera settings
-          </h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
-            <X className="w-4 h-4 text-neutral-500" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-3xl p-6 max-w-lg w-full neu-flat space-y-4 text-left max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-3">
+          <div className="flex items-center gap-2">
+            <Wifi className="w-5 h-5 text-[#773C30]" />
+            <h3 className="font-display font-extrabold text-base text-slate-900 tracking-tight">Camera Settings</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto">
+        <div className="overflow-y-auto flex-1 space-y-4 pr-1">
           {/* Default source */}
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-1.5">
-              Default capture source
-            </p>
-            <div className="flex gap-1">
+            <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Default capture source</p>
+            <div className="flex gap-2">
               <button
                 onClick={() => setSource('local')}
-                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-lg transition ${
-                  settings.source === 'local' ? 'bg-amber-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                  settings.source === 'local' ? 'neu-btn-highlight' : 'neu-btn-secondary text-slate-700'
                 }`}
               >
-                <Camera className="w-3.5 h-3.5" /> Local webcam
+                <Camera className="w-3.5 h-3.5 stroke-[2.5]" /> Local webcam
               </button>
               <button
                 onClick={() => setSource('ipcam')}
-                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-lg transition ${
-                  settings.source === 'ipcam' ? 'bg-amber-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                  settings.source === 'ipcam' ? 'neu-btn-highlight' : 'neu-btn-secondary text-slate-700'
                 }`}
               >
-                <Wifi className="w-3.5 h-3.5" /> IP cameras
+                <Wifi className="w-3.5 h-3.5 stroke-[2.5]" /> IP cameras
               </button>
             </div>
           </div>
@@ -120,24 +119,21 @@ export default function CameraSettings({ settings, onChange, onClose }: CameraSe
           <button
             onClick={connectAll}
             disabled={connectingAll}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold"
+            className="w-full py-3 rounded-xl neu-btn-highlight font-display font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {connectingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4" />}
+            {connectingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4 stroke-[2.5]" />}
             Connect all IP cameras
           </button>
 
           {/* 5 stage sections */}
           <div className="space-y-2.5">
             {CAM_STAGES.map((stage) => (
-              <div
-                key={stage}
-                className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-3 space-y-2"
-              >
+              <div key={stage} className="rounded-2xl neu-pressed-sm p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold capitalize text-neutral-700 dark:text-neutral-200">
+                  <span className="text-[11px] font-bold uppercase tracking-wider capitalize text-slate-700">
                     {stage} camera
                   </span>
-                  <label className="flex items-center gap-1.5 text-[11px] text-neutral-500 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={settings.cams[stage]?.enabled || false}
@@ -151,11 +147,11 @@ export default function CameraSettings({ settings, onChange, onClose }: CameraSe
                     value={settings.cams[stage]?.url || ''}
                     onChange={(e) => setStage(stage, { url: e.target.value })}
                     placeholder="http://192.168.1.5:8080/shot.jpg"
-                    className="flex-1 text-xs font-mono px-2.5 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
+                    className="flex-1 p-2.5 rounded-xl neu-input text-xs font-mono font-semibold text-slate-900 bg-white"
                   />
                   <button
                     onClick={() => testOne(stage)}
-                    className="px-2.5 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200"
+                    className="px-3 py-2 rounded-xl neu-btn-secondary text-[11px] font-bold uppercase tracking-wider text-slate-700 cursor-pointer"
                   >
                     Test
                   </button>
@@ -166,10 +162,10 @@ export default function CameraSettings({ settings, onChange, onClose }: CameraSe
           </div>
         </div>
 
-        <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-700 flex justify-end">
+        <div className="border-t border-[var(--neu-border-color)] pt-3 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold"
+            className="px-5 py-2 rounded-xl neu-btn-highlight font-display font-bold text-xs uppercase tracking-wider cursor-pointer"
           >
             Done
           </button>

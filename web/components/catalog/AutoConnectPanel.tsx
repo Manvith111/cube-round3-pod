@@ -91,12 +91,12 @@ export default function AutoConnectPanel({ onConnect }: AutoConnectPanelProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 space-y-3">
+    <div className="rounded-2xl neu-pressed-sm p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          <PackageSearch className="w-4 h-4 text-amber-600" /> Catalog &amp; auto-connect
+        <h3 className="flex items-center gap-2 font-display font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+          <PackageSearch className="w-4 h-4 text-[#773C30]" /> Catalog &amp; auto-connect
         </h3>
-        <span className="text-[11px] text-neutral-500">
+        <span className="text-[11px] font-mono text-slate-500">
           {count === null ? '…' : `${count} products`}
         </span>
       </div>
@@ -108,34 +108,33 @@ export default function AutoConnectPanel({ onConnect }: AutoConnectPanelProps) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           placeholder="Scan / type a SKU or product name"
-          className="flex-1 text-xs px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
+          className="flex-1 p-2.5 rounded-xl neu-input text-xs font-mono font-semibold text-slate-900 bg-white"
         />
         <button
           onClick={handleSearch}
           disabled={searching || !query.trim()}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-semibold"
+          className="px-4 py-2 rounded-xl neu-btn-highlight font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
         >
-          {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+          {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5 stroke-[2.5]" />}
           Search
         </button>
       </div>
 
       {/* Best match → connect */}
       {best && (
-        <div className="rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-3">
-          <p className="text-xs text-neutral-600 dark:text-neutral-300">
-            Matched <span className="font-mono font-semibold">{best.sku}</span>
+        <div className="rounded-xl neu-pressed-sm p-3">
+          <p className="text-xs font-semibold text-slate-700">
+            Matched <span className="font-mono text-[#773C30]">{best.sku}</span>
             {best.title ? ` · ${best.title}` : ''}
           </p>
-          <p className="text-[11px] text-neutral-500 mt-0.5">
-            Unit <span className="font-mono">{best.unit_id}</span> · {best.org_id} ·{' '}
-            {best.route?.toUpperCase()}{best.returned ? ' + RETURN' : ''}
+          <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+            Unit {best.unit_id} · {best.org_id} · {best.route?.toUpperCase()}{best.returned ? ' + RETURN' : ''}
           </p>
           <button
             onClick={() => onConnect(best)}
-            className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+            className="mt-2 px-3 py-1.5 rounded-xl neu-btn-highlight font-display font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
           >
-            <Link2 className="w-3.5 h-3.5" /> Connect &amp; show process
+            <Link2 className="w-3.5 h-3.5 stroke-[2.5]" /> Connect &amp; show process
           </button>
         </div>
       )}
@@ -147,10 +146,10 @@ export default function AutoConnectPanel({ onConnect }: AutoConnectPanelProps) {
             <button
               key={`${m.sku}-${m.unit_id}`}
               onClick={() => onConnect(m)}
-              className="w-full flex items-center justify-between text-left text-[11px] px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              className="w-full flex items-center justify-between text-left text-[11px] px-2.5 py-1.5 rounded-lg neu-btn-secondary text-slate-700 cursor-pointer"
             >
-              <span className="font-mono text-neutral-700 dark:text-neutral-200">{m.sku}</span>
-              <span className="text-neutral-500">
+              <span className="font-mono font-semibold">{m.sku}</span>
+              <span className="text-slate-500 font-mono">
                 {m.unit_id} · {Math.round((m.score || 0) * 100)}%
               </span>
             </button>
@@ -159,13 +158,13 @@ export default function AutoConnectPanel({ onConnect }: AutoConnectPanelProps) {
       )}
 
       {error && (
-        <p className="flex items-center gap-1 text-xs text-amber-600">
+        <p className="flex items-center gap-1 text-xs font-semibold text-[#773C30]">
           <AlertTriangle className="w-3.5 h-3.5" /> {error}
         </p>
       )}
 
       {/* Upload catalog */}
-      <div className="pt-1 border-t border-neutral-100 dark:border-neutral-800">
+      <div className="pt-1 border-t border-[var(--neu-border-color)]">
         <input
           ref={fileRef}
           type="file"
@@ -176,7 +175,7 @@ export default function AutoConnectPanel({ onConnect }: AutoConnectPanelProps) {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300 hover:text-amber-600"
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#773C30] cursor-pointer"
         >
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
           Upload product catalog (CSV / JSON)

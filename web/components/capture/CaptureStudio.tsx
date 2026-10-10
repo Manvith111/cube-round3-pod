@@ -231,122 +231,120 @@ export default function CaptureStudio({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-          <h3 className="text-sm font-semibold capitalize text-neutral-800 dark:text-neutral-100">
-            Capture · {stage} · <span className="font-mono text-xs">{unitId}</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+      <div className="bg-white rounded-3xl p-6 max-w-lg w-full neu-flat space-y-4 text-left">
+        <div className="flex items-center justify-between border-b border-[var(--neu-border-color)] pb-3">
+          <h3 className="font-display font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+            Capture · {stage} · <span className="font-mono normal-case text-[#773C30]">{unitId}</span>
           </h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
-            <X className="w-4 h-4 text-neutral-500" />
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Source toggle */}
-        <div className="flex gap-1 p-2 bg-neutral-50 dark:bg-neutral-800/50">
+        <div className="flex items-center gap-1 p-1 rounded-xl neu-pressed-sm">
           <button
             onClick={() => setSource('local')}
-            className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-lg transition ${
-              source === 'local' ? 'bg-amber-600 text-white' : 'text-neutral-600 dark:text-neutral-300'
+            className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider py-2 rounded-lg cursor-pointer transition-all ${
+              source === 'local' ? 'neu-btn-highlight' : 'text-slate-600 hover:text-[#773C30]'
             }`}
           >
-            <Camera className="w-3.5 h-3.5" /> Local webcam
+            <Camera className="w-3.5 h-3.5 stroke-[2.5]" /> Local webcam
           </button>
           <button
             onClick={() => setSource('ipcam')}
-            className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-lg transition ${
-              source === 'ipcam' ? 'bg-amber-600 text-white' : 'text-neutral-600 dark:text-neutral-300'
+            className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider py-2 rounded-lg cursor-pointer transition-all ${
+              source === 'ipcam' ? 'neu-btn-highlight' : 'text-slate-600 hover:text-[#773C30]'
             }`}
           >
-            <Wifi className="w-3.5 h-3.5" /> IP camera
+            <Wifi className="w-3.5 h-3.5 stroke-[2.5]" /> IP camera
           </button>
         </div>
 
-        <div className="p-4 space-y-3">
-          {source === 'ipcam' && (
-            <input
-              value={ipUrl}
-              onChange={(e) => rememberUrl(e.target.value)}
-              placeholder="http://192.168.1.5:8080/shot.jpg"
-              className="w-full text-xs font-mono px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
-            />
+        {source === 'ipcam' && (
+          <input
+            value={ipUrl}
+            onChange={(e) => rememberUrl(e.target.value)}
+            placeholder="http://192.168.1.5:8080/shot.jpg"
+            className="w-full p-2.5 rounded-xl neu-input text-xs font-mono font-semibold text-slate-900 bg-white"
+          />
+        )}
+
+        {/* Preview */}
+        <div className="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center">
+          {source === 'local' ? (
+            <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
+          ) : ipPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={ipPreview} alt="IP camera preview" className="w-full h-full object-contain" />
+          ) : (
+            <span className="text-xs text-slate-400 font-medium">
+              {ipUrl ? 'Connecting to camera…' : 'Enter an IP-camera URL above'}
+            </span>
           )}
 
-          {/* Preview */}
-          <div className="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
-            {source === 'local' ? (
-              <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
-            ) : ipPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={ipPreview} alt="IP camera preview" className="w-full h-full object-contain" />
-            ) : (
-              <span className="text-xs text-neutral-400">
-                {ipUrl ? 'Connecting to camera…' : 'Enter an IP-camera URL above'}
-              </span>
-            )}
-
-            {source === 'local' && autoMotion && (
-              <div className="absolute top-2 left-2 right-2 flex items-center gap-2">
-                <Activity className={`w-3.5 h-3.5 ${motion.moving ? 'text-red-400' : 'text-emerald-400'}`} />
-                <div className="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${motion.moving ? 'bg-red-400' : 'bg-emerald-400'}`}
-                    style={{ width: `${Math.round(motion.level * 100)}%` }}
-                  />
-                </div>
+          {source === 'local' && autoMotion && (
+            <div className="absolute top-2 left-2 right-2 flex items-center gap-2">
+              <Activity className={`w-3.5 h-3.5 ${motion.moving ? 'text-red-400' : 'text-emerald-400'}`} />
+              <div className="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden">
+                <div
+                  className={`h-full transition-all ${motion.moving ? 'bg-red-400' : 'bg-emerald-400'}`}
+                  style={{ width: `${Math.round(motion.level * 100)}%` }}
+                />
               </div>
-            )}
-          </div>
-
-          {source === 'local' && (
-            <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300 cursor-pointer">
-              <input type="checkbox" checked={autoMotion} onChange={(e) => setAutoMotion(e.target.checked)} />
-              <Activity className="w-3.5 h-3.5" /> Auto-capture on motion (motion sensor)
-            </label>
-          )}
-
-          {/* Product details */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="col-span-2 flex items-center gap-1.5 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
-              <Tag className="w-3 h-3" /> Product details (optional — links this unit in the catalog)
             </div>
-            <input
-              value={sku}
-              onChange={(e) => setSku(e.target.value)}
-              placeholder="SKU e.g. SKU-CABLE-USBC"
-              className="text-xs px-2.5 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
-            />
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Title e.g. USB-C Cable"
-              className="text-xs px-2.5 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100"
-            />
-          </div>
-
-          {error && <p className="text-xs text-red-500">{error}</p>}
-          {status && !error && (
-            <p className="flex items-center gap-1 text-xs text-emerald-600">
-              <CheckCircle2 className="w-3.5 h-3.5" /> {status}
-            </p>
           )}
+        </div>
 
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => (source === 'local' ? captureLocal() : captureIp())}
-              disabled={busy || (source === 'ipcam' && !ipUrl)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-semibold transition"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-              {busy ? 'Saving…' : 'Capture'}
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-600 text-sm text-neutral-600 dark:text-neutral-300"
-            >
-              {lastFile ? 'Done' : 'Cancel'}
-            </button>
+        {source === 'local' && (
+          <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer">
+            <input type="checkbox" checked={autoMotion} onChange={(e) => setAutoMotion(e.target.checked)} />
+            <Activity className="w-3.5 h-3.5 text-[#773C30]" /> Auto-capture on motion (motion sensor)
+          </label>
+        )}
+
+        {/* Product details */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2 flex items-center gap-1.5 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+            <Tag className="w-3 h-3 text-[#773C30]" /> Product details (optional — links this unit in the catalog)
           </div>
+          <input
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="SKU e.g. SKU-CABLE-USBC"
+            className="p-2.5 rounded-xl neu-input text-xs font-mono font-semibold text-slate-900 bg-white"
+          />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title e.g. USB-C Cable"
+            className="p-2.5 rounded-xl neu-input text-xs font-mono font-semibold text-slate-900 bg-white"
+          />
+        </div>
+
+        {error && <p className="text-xs font-semibold text-[#773C30]">{error}</p>}
+        {status && !error && (
+          <p className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+            <CheckCircle2 className="w-3.5 h-3.5" /> {status}
+          </p>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => (source === 'local' ? captureLocal() : captureIp())}
+            disabled={busy || (source === 'ipcam' && !ipUrl)}
+            className="flex-1 py-3 rounded-xl neu-btn-highlight font-display font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4 stroke-[2.5]" />}
+            {busy ? 'Saving…' : 'Capture'}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-3 rounded-xl neu-btn-secondary text-xs font-bold uppercase tracking-wider text-slate-700 cursor-pointer"
+          >
+            {lastFile ? 'Done' : 'Cancel'}
+          </button>
         </div>
       </div>
     </div>
