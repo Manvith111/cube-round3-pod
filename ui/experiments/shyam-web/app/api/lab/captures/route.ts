@@ -35,7 +35,16 @@ export async function POST(req: NextRequest) {
         })
       );
     }
-    return NextResponse.json({ error: 'action must be "upload" or "copy"' }, { status: 400 });
+    if (b.action === 'delete') {
+      // names omitted = every image in that stage folder; the backend only ever touches that one folder
+      return NextResponse.json(
+        await backend('/api/captures/delete', {
+          method: 'POST',
+          body: { unit: b.unit, stage: b.stage, names: Array.isArray(b.names) ? b.names : undefined },
+        })
+      );
+    }
+    return NextResponse.json({ error: 'action must be "upload", "copy" or "delete"' }, { status: 400 });
   } catch (error) {
     return failure(error);
   }

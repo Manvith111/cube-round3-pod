@@ -126,6 +126,25 @@ def copy_paths(body: dict) -> dict:
             "orchestrator_would_send": discover_inputs(unit, stage)}
 
 
+@app.post("/api/captures/delete")
+def delete_captures(body: dict) -> dict:
+    """Remove images from one unit's stage folder: the named ones, or all of them when `names` is left out.
+    Refused while a run is in progress (a run reads those files)."""
+    try:
+        unit, stage = captures.check_unit(body.get("unit", "")), captures.check_stage(body.get("stage", ""))
+        names = body.get("names")
+        if not runner.LOCK.acquire(blocking=False):
+            raise HTTPException(409, "A run is in progress. Try again when it has finished.")
+        try:
+            removed = captures.delete(unit, stage, names)
+        finally:
+            runner.LOCK.release()
+    except captures.CaptureError as exc:
+        raise _bad(exc) from exc
+    return {"removed": removed, "folder": str(captures.stage_dir(unit, stage)),
+            "orchestrator_would_send": discover_inputs(unit, stage)}
+
+
 @app.get("/api/capture-file")
 def capture_file(ref: str) -> FileResponse:
     try:
@@ -138,7 +157,8 @@ def capture_file(ref: str) -> FileResponse:
 def run(body: dict) -> dict:
     try:
         return runner.execute(body.get("mode", ""), body.get("stage", ""), body.get("org_id", ""),
-                              body.get("unit_id", ""), body.get("test") or None, body.get("pair"))
+                              body.get("unit_id", ""), body.get("test") or None, body.get("pair"),
+                              custom=body.get("custom") or None)
     except captures.CaptureError as exc:
         raise _bad(exc) from exc
 
@@ -148,7 +168,7 @@ LIVE_LOCK = threading.Lock()
 LIVE_KEEP = 30
 
 
-def _worker(run_id: str, args: tuple, case_overrides: dict | None = None) -> None:
+def _worker(run_id: str, args: tuple, case_overrides: dict | None = None, custom: dict | None = None) -> None:
     state = LIVE[run_id]
 
     def on_event(event: dict) -> None:
@@ -156,7 +176,8 @@ def _worker(run_id: str, args: tuple, case_overrides: dict | None = None) -> Non
             state["events"].append({"n": len(state["events"]), "at": time.time(), **event})
 
     try:
-        state["result"] = runner.execute(*args, run_id=run_id, on_event=on_event, case_overrides=case_overrides)
+        state["result"] = runner.execute(*args, run_id=run_id, on_event=on_event, case_overrides=case_overrides,
+                                         custom=custom)
     except Exception as exc:  # noqa: BLE001 - shown to the user as the run's error, never swallowed
         state["error"] = f"{type(exc).__name__}: {exc}"
     finally:
@@ -169,9 +190,13 @@ def run_start(body: dict) -> dict:
     args = (body.get("mode", ""), body.get("stage", ""), body.get("org_id", ""), body.get("unit_id", ""),
             body.get("test") or None, body.get("pair"))
     overrides = body.get("case") or None  # optional {route, returned}, for units that are not in the sample data
+    custom = body.get("custom") or None   # optional custom case: the user's own expected values (see runner.build_custom)
     try:
         mode, stage, org, unit = runner.validate(*args)
-        case = runner.build_case(org, unit, overrides)
+        if custom is not None:
+            case, _rows, _clean = runner.build_custom(org, unit, mode, stage, custom, body.get("test") or None)
+        else:
+            case = runner.build_case(org, unit, overrides)
     except captures.CaptureError as exc:
         raise _bad(exc) from exc
     flow = load_flow(runner.flow_path())
@@ -181,7 +206,7 @@ def run_start(body: dict) -> dict:
             if LIVE[old]["done"]:
                 del LIVE[old]
         LIVE[run_id] = {"events": [], "done": False, "result": None, "error": None}
-    threading.Thread(target=_worker, args=(run_id, args, overrides), daemon=True).start()
+    threading.Thread(target=_worker, args=(run_id, args, overrides, custom), daemon=True).start()
     # `plan` lets a screen draw every stage up front (which will run, which are skipped and why).
     return {"run_id": run_id, "case": case, "plan": trace_view.plan(flow, case) if mode == "full" else None}
 

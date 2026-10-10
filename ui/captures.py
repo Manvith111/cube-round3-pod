@@ -155,6 +155,27 @@ def save(unit: str, stage: str, role: str, filename: str, data: bytes, source: s
             "sha256": digest, "size": len(data)}
 
 
+def delete(unit: str, stage: str, names: list[str] | None = None) -> list[str]:
+    """Remove image files from ONE stage folder of one unit: the named ones, or every image there when `names` is None.
+    Only files that are directly inside <INPUT_DIR>/<unit>/<stage>/, are images, and are not hidden can go: a name is
+    matched against the folder's own listing, so no path in `names` can reach anywhere else. Returns what was removed."""
+    if names is not None and (not isinstance(names, list) or not all(isinstance(n, str) for n in names)):
+        raise CaptureError("names must be a list of file names")
+    folder = stage_dir(unit, stage)
+    if not folder.is_dir():
+        return []
+    wanted = None if names is None else set(names)
+    removed = []
+    for p in sorted(folder.iterdir()):
+        if not p.is_file() or p.name.startswith(".") or p.suffix.lower() not in IMAGE_EXTS:
+            continue
+        if wanted is not None and p.name not in wanted:
+            continue
+        p.unlink()
+        removed.append(p.name)
+    return removed
+
+
 def copy_from_path(unit: str, stage: str, role: str, raw_path: str) -> dict:
     """Copy one local file. Relative paths are resolved against the repo root. The original is only read."""
     text = (raw_path or "").strip().strip('"').strip("'")

@@ -89,6 +89,7 @@ export interface RunView {
   elapsed_ms: number;
   request: { mode: 'single' | 'full'; stage: string; org_id: string; unit_id: string; test: string | null; pair: number | null };
   label: string;
+  custom?: boolean;
   notes: string[];
   case: { org_id: string; unit_id: string; route: string; returned: boolean };
   test: {

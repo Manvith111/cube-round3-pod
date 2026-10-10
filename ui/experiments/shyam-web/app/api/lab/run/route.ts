@@ -22,6 +22,8 @@ export async function POST(req: NextRequest) {
         unit_id: b.unit_id,
         test: b.test ?? null,
         pair: b.pair ?? null,
+        // the user's own expected values (optional); the backend checks every field
+        custom: b.custom ?? null,
       },
     });
     return NextResponse.json(started);

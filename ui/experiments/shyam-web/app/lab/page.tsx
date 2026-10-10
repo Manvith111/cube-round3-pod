@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlaskConical, Play, Upload, AlertTriangle, Clock } from 'lucide-react';
+import { FlaskConical, Play, Upload, AlertTriangle, Clock, Camera, Trash2, X } from 'lucide-react';
 import RunSyncRail, { RailStage, RailState } from '@/components/ui/run-sync-rail';
 import RunResults from '@/components/lab/RunResults';
 import { BLURB, ErrorBox, NAMES, captureUrl, stem } from '@/components/lab/bits';
@@ -11,8 +11,11 @@ import { applyEvent, emptyLive, followRun, getJson, liveFromPlan, LiveRun, parce
 import AgenticFactory3D from '@/components/ui/agentic-factory-3d';
 import BuildPipeline from '@/components/ui/build-pipeline';
 import { buildPipelineRun } from '@/components/lab/pipelineRun';
+import CameraCapture, { type WebcamShot } from '@/components/lab/CameraCapture';
+import CustomCaseForm, { EMPTY_CUSTOM, customPayload, customProblem, type CustomCase } from '@/components/lab/CustomCaseForm';
 
 const ROLE_BTN: Record<string, string> = { capture: 'Add images', reference: 'Add reference photos', returned: 'Add returned photos' };
+const WEBCAM_BTN: Record<string, string> = { capture: 'Take photo', reference: 'Take reference photo', returned: 'Take returned photo' };
 const TESTS: { key: string; label: string; hint: string }[] = [
   { key: 'wrong_company', label: 'Wrong company', hint: 'Runs the unit under the other company: the refusal must be recorded' },
   { key: 'no_image', label: 'No image', hint: 'Points the input folder at an empty one for this run only' },
@@ -51,6 +54,9 @@ export default function LabPage() {
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [paths, setPaths] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const [useCustom, setUseCustom] = useState(false);
+  const [custom, setCustom] = useState<CustomCase>(EMPTY_CUSTOM);
+  const [cameraRole, setCameraRole] = useState<string | null>(null);
 
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState<LiveRun>(emptyLive());
@@ -146,9 +152,40 @@ export default function LabPage() {
     }
   };
 
+  // a webcam photo is saved exactly like an uploaded one
+  const saveWebcamShot = async (role: string, shot: WebcamShot) => {
+    const r = await postJson<CaptureResult>('/api/lab/captures', {
+      action: 'upload',
+      unit: unit.trim(),
+      stage: track,
+      items: [{ role, filename: shot.filename, data_b64: shot.dataBase64 }],
+    });
+    if (r.errors.length) throw new Error(r.errors[0].error);
+    await showSaved(r);
+  };
+
+  // remove images from this unit's stage folder: the given file names, or every image there
+  const removeImages = async (names?: string[]) => {
+    try {
+      await postJson('/api/lab/captures', { action: 'delete', unit: unit.trim(), stage: track, names });
+      setCaptureResult(null);
+      setCaptureError(null);
+      await loadCase();
+    } catch (e: any) {
+      setCaptureError(e.message);
+    }
+  };
+
   // ---------------------------------------------------------------- running
   const doRun = async (test: string | null) => {
     if (busy || !unit.trim()) return;
+    if (useCustom) {
+      const problem = customProblem(custom);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+    }
     setMoreOpen(false);
     setBusy(true);
     setRun(null);
@@ -162,7 +199,7 @@ export default function LabPage() {
     try {
       const started = await postJson<{ run_id: string; plan: { stage: string; will_run: boolean; reason?: string | null }[] | null }>(
         '/api/lab/run',
-        { mode, stage: track, org_id: org, unit_id: unit.trim(), test, pair: currentPair }
+        { mode, stage: track, org_id: org, unit_id: unit.trim(), test, pair: currentPair, custom: useCustom ? customPayload(custom) : undefined }
       );
       setLive(liveFromPlan(started.plan, track));
       const final = await followRun(
@@ -275,6 +312,14 @@ export default function LabPage() {
         </ErrorBox>
       )}
 
+      {cameraRole && (
+        <CameraCapture
+          title={`Take photos for ${NAMES[track] || track} · ${unit.trim()}`}
+          onCapture={(shot) => saveWebcamShot(cameraRole, shot)}
+          onClose={() => setCameraRole(null)}
+        />
+      )}
+
       {/* 1. TRACK */}
       <section aria-labelledby="lab-s1" className="space-y-3">
         <StepTitle n={1} id="lab-s1">Choose a track</StepTitle>
@@ -342,6 +387,11 @@ export default function LabPage() {
           </fieldset>
         </div>
         <p className="text-xs text-slate-500 font-mono" aria-live="polite">{caseLine}</p>
+        <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+          <input type="checkbox" checked={useCustom} disabled={busy} onChange={(e) => setUseCustom(e.target.checked)} className="w-4 h-4 accent-[#773C30]" />
+          Use my own case: I type what the photos should show (works with any unit ID)
+        </label>
+        {useCustom && <CustomCaseForm value={custom} onChange={setCustom} disabled={busy} />}
       </section>
 
       {/* 3. IMAGES */}
@@ -350,7 +400,22 @@ export default function LabPage() {
         <div className="rounded-[24px] neu-flat p-5 space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <strong className="text-sm text-slate-900">{files.length ? `${files.length} image${files.length === 1 ? '' : 's'} ready` : 'No images yet'}</strong>
-            <span className="text-[11px] font-mono text-slate-500 break-all">{caseInfo?.captures[track]?.folder}</span>
+            <span className="flex flex-wrap items-center gap-3">
+              {files.length > 0 && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    if (window.confirm(`Remove all ${files.length} image(s) for ${NAMES[track] || track} of ${unit.trim()}? This deletes the files from the folder shown.`)) void removeImages();
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear all
+                </button>
+              )}
+              <span className="text-[11px] font-mono text-slate-500 break-all">{caseInfo?.captures[track]?.folder}</span>
+            </span>
           </div>
 
           {files.length ? (
@@ -359,9 +424,18 @@ export default function LabPage() {
                 const s = stem(f.ref);
                 const dim = track === 'returns' && currentPair !== null && s !== `reference_${currentPair}` && s !== `returned_${currentPair}`;
                 return (
-                  <figure key={f.ref} className={`w-28 ${dim ? 'opacity-40' : ''}`} title={`${f.ref}\nsha256 ${f.sha256}`}>
+                  <figure key={f.ref} className={`relative w-28 ${dim ? 'opacity-40' : ''}`} title={`${f.ref}\nsha256 ${f.sha256}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={captureUrl(f.ref)} alt={f.ref} loading="lazy" className="w-28 h-28 object-cover rounded-xl bg-slate-100" />
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void removeImages([f.ref.split(/[\\/]/).pop() || ''])}
+                      aria-label={`Remove ${f.ref.split(/[\\/]/).pop()}`}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 border border-slate-300 text-slate-700 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center cursor-pointer disabled:opacity-50"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                     <figcaption className="text-[10px] font-mono text-slate-600 mt-1">
                       {s} {track === 'returns' && currentPair !== null && !dim && <span className="text-emerald-700 font-bold">sent</span>}
                     </figcaption>
@@ -371,13 +445,14 @@ export default function LabPage() {
             </div>
           ) : (
             <p className="text-xs text-slate-500 rounded-xl neu-pressed-sm p-4">
-              Add images below. With none, the agent gets <code>inputs: []</code>.
+              Add images below (upload them, or take them with your webcam). With none, the agent gets <code>inputs: []</code>.
             </p>
           )}
 
           <div className="flex flex-wrap gap-2">
             {(naming?.roles ?? []).map((r) => (
-              <label key={r.role} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl neu-btn-secondary text-xs font-bold text-slate-800 cursor-pointer">
+              <React.Fragment key={r.role}>
+              <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl neu-btn-secondary text-xs font-bold text-slate-800 cursor-pointer">
                 <Upload className="w-3.5 h-3.5 text-[#773C30]" />
                 {ROLE_BTN[r.role] || 'Add images'}
                 <input
@@ -389,6 +464,16 @@ export default function LabPage() {
                   onChange={(e) => doUpload(e.currentTarget, r.role)}
                 />
               </label>
+              <button
+                type="button"
+                onClick={() => setCameraRole(r.role)}
+                disabled={busy || uploading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl neu-btn-secondary text-xs font-bold text-slate-800 cursor-pointer disabled:opacity-60"
+              >
+                <Camera className="w-3.5 h-3.5 text-[#773C30]" />
+                {WEBCAM_BTN[r.role] || 'Take photo'}
+              </button>
+              </React.Fragment>
             ))}
             {uploading && <span className="text-xs text-slate-500 self-center">Saving...</span>}
           </div>

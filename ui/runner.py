@@ -15,6 +15,7 @@ import copy
 import importlib
 import json
 import os
+import re
 import secrets
 import shutil
 import socket
@@ -24,8 +25,8 @@ import time
 from pathlib import Path
 
 from orchestration.clients import HttpClient, InProcClient, client_for, load_manifest
-from orchestration.orchestrator import (apply_override, bundle, default_flow_path, flow_stages, load_flow,
-                                        run_workflow)
+from orchestration.orchestrator import (applies, apply_override, bundle, default_flow_path, discover_inputs,
+                                        flow_stages, load_flow, run_workflow)
 from orchestration.store import FileStore
 from shared.utils import sample_data
 from shared.utils.records import utcnow
@@ -78,6 +79,146 @@ def build_case(org: str, unit: str, overrides: dict | None = None) -> dict:
             raise captures.CaptureError("returned must be true or false")
         case["returned"] = overrides["returned"]
     return case
+
+
+# ---------------------------------------------------------------- custom case (expected values typed in the UI)
+# A unit that is not in data/sample has no expected values: Receiving, Returns and Recovery look the unit up in the
+# sample CSVs and refuse anything unknown. A "custom case" supplies those values for ONE run instead. Prep and Pack
+# read them from the case context; for the others a couple of stand-in rows are shown to sample_data.row() for that
+# unit and organisation only, while that run is in flight (runs are serialised by LOCK). Nothing is written to data/sample.
+PHOTO_STAGES = ("receiving", "prep", "pack", "returns")
+_SKU_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def _text(c: dict, key: str, limit: int = 120) -> str:
+    v = c.get(key)
+    if v is None:
+        return ""
+    if not isinstance(v, str):
+        raise captures.CaptureError(f"custom case: {key} must be text")
+    v = v.strip()
+    if len(v) > limit or any(ord(ch) < 32 for ch in v):
+        raise captures.CaptureError(f"custom case: {key} is too long ({limit} characters at most) or has control characters")
+    return v
+
+
+def _whole(c: dict, key: str, default: int, lo: int, hi: int) -> int:
+    v = c.get(key, default)
+    if isinstance(v, bool) or not isinstance(v, int) or not lo <= v <= hi:
+        raise captures.CaptureError(f"custom case: {key} must be a whole number from {lo} to {hi}")
+    return v
+
+
+def _yes_no(c: dict, key: str) -> bool:
+    v = c.get(key, False)
+    if not isinstance(v, bool):
+        raise captures.CaptureError(f"custom case: {key} must be true or false")
+    return v
+
+
+def _items(c: dict, key: str, max_items: int, max_len: int) -> list[str]:
+    v = c.get(key)
+    if v is None or v == "":
+        return []
+    items = [s for s in re.split(r"[;,]", v)] if isinstance(v, str) else v
+    if not isinstance(items, list) or not all(isinstance(s, str) for s in items):
+        raise captures.CaptureError(f"custom case: {key} must be text separated by ; or ,")
+    items = [s.strip() for s in items if s.strip()]
+    if len(items) > max_items or any(len(s) > max_len for s in items):
+        raise captures.CaptureError(f"custom case: {key} has too many items (max {max_items}) or an item over {max_len} characters")
+    return items
+
+
+def parse_custom(c: dict) -> dict:
+    """Check what the user typed and return it cleaned. Raises CaptureError with a readable reason."""
+    if not isinstance(c, dict):
+        raise captures.CaptureError("custom case must be an object")
+    sku = _text(c, "sku", 64)
+    if not _SKU_RE.match(sku):
+        raise captures.CaptureError("custom case: SKU is required (letters, digits, '.', '_' or '-', up to 64 characters)")
+    lines = []
+    for part in _items(c, "order_lines", 30, 80):
+        s, _, q = part.partition(":")
+        s = s.strip()
+        if not _SKU_RE.match(s) or not q.strip().isdigit() or not 1 <= int(q) <= 10000:
+            raise captures.CaptureError(f"custom case: order line {part!r} should look like SKU:quantity (for example MUG-1:2)")
+        lines.append({"sku": s, "qty": int(q), "name": s})
+    route = c.get("route", "mfn")
+    if route not in ("mfn", "fba"):
+        raise captures.CaptureError("custom case: route must be mfn or fba")
+    return {"sku": sku, "name": _text(c, "name") or sku, "category": _text(c, "category", 60),
+            "expected_fnsku": _text(c, "expected_fnsku", 40), "cartons": _whole(c, "cartons", 1, 1, 1000),
+            "units": _whole(c, "units", 1, 1, 100000), "order_lines": lines,
+            "parts_list": _items(c, "parts_list", 20, 60), "route": route, "returned": _yes_no(c, "returned"),
+            "requires_polybag": _yes_no(c, "requires_polybag"), "has_expiry": _yes_no(c, "has_expiry"),
+            "is_fragile": _yes_no(c, "is_fragile"), "cover_original_barcode": _yes_no(c, "cover_original_barcode"),
+            "required_handling_marks": _items(c, "required_handling_marks", 10, 40)}
+
+
+def build_custom(org: str, unit: str, mode: str, stage: str, custom: dict, test: str | None,
+                 run_org: str | None = None) -> tuple[dict, dict, dict]:
+    """-> (case, stand-in rows, cleaned custom values). Refuses a run that would be answered from stand-in values
+    instead of photos: every stage that will run and looks at photos needs at least one."""
+    if test == "no_image":
+        raise captures.CaptureError("custom case: the 'No image' check is not available (it would run on stand-in values)")
+    c = parse_custom(custom)
+    case = {"org_id": run_org or org, "unit_id": unit, "route": c["route"], "returned": c["returned"], "sku": c["sku"],
+            "name": c["name"], "expected_fnsku": c["expected_fnsku"], "requires_polybag": c["requires_polybag"],
+            "has_expiry": c["has_expiry"], "is_fragile": c["is_fragile"],
+            "cover_original_barcode": c["cover_original_barcode"],
+            "required_handling_marks": c["required_handling_marks"], "order_lines": c["order_lines"],
+            "order_id": unit, "channel": c["route"]}
+    if c["category"]:
+        case["category"] = c["category"]
+    missing = []
+    for step in load_flow(flow_path())["steps"]:
+        st = step["stage"]
+        if st not in PHOTO_STAGES or (mode == "single" and st != stage):
+            continue
+        if mode == "full" and not applies(step, case)[0]:
+            continue
+        if not discover_inputs(unit, st):
+            missing.append(st)
+    if missing:
+        raise captures.CaptureError("custom case: add at least one photo for " + ", ".join(missing)
+                                    + " first (a custom case is never answered from stand-in values)")
+    now = utcnow()
+    base = {"unit_id": unit, "org_id": org, "operator_id": "custom", "captured_at": now, "photo_refs": ""}
+    rows = {
+        "receiving": {**base, "record_id": f"CUSTOM-RCV-{unit}", "po_number": "CUSTOM", "po_line": "1",
+                      "supplier": "Custom case (typed in the test UI)", "sku": c["sku"], "asin": "",
+                      "product_title": c["name"], "spec_colour": "", "spec_variant": "", "spec_components": "",
+                      "cartons_ordered": str(c["cartons"]), "cartons_received": str(c["cartons"]),
+                      "units_per_carton_ordered": "", "units_per_carton_counted": "", "qty_ordered": str(c["units"]),
+                      "qty_received": str(c["units"]), "identity_match": "", "carton_damage": "", "unit_damage": "",
+                      "quality_flags": ""},
+        "returns": {**base, "record_id": f"CUSTOM-RTN-{unit}", "order_id": unit, "ordered_sku": c["sku"],
+                    "ordered_asin": "", "identity_match": "", "parts_list": ";".join(c["parts_list"]),
+                    "parts_missing": "", "observed_state": "", "amazon_condition": "",
+                    "operator_disposition": "pending_review"},
+    }
+    return case, rows, c
+
+
+@contextlib.contextmanager
+def _custom_rows(unit: str, org: str, rows: dict):
+    """While a custom run is in flight, sample_data.row() also knows the stand-in rows for this unit and org (and only
+    them; other units and the wrong-company check still see the real data). The original is always put back."""
+    if not rows:
+        yield
+        return
+    original = sample_data.row
+
+    def patched(kind: str, unit_id: str, org_id: str) -> dict:
+        if unit_id == unit and org_id == org and kind in rows:
+            return dict(rows[kind])
+        return original(kind, unit_id, org_id)
+
+    sample_data.row = patched
+    try:
+        yield
+    finally:
+        sample_data.row = original
 
 
 class PairFilter:
@@ -201,12 +342,17 @@ def new_run_id() -> str:
 
 
 def execute(mode: str, stage: str, org: str, unit: str, test: str | None = None, pair: int | None = None,
-            run_id: str | None = None, on_event=None, case_overrides: dict | None = None) -> dict:
+            run_id: str | None = None, on_event=None, case_overrides: dict | None = None,
+            custom: dict | None = None) -> dict:
     """Run the orchestrator. `on_event(dict)` (optional) is called as things happen: stage_start / stage_end from the
     recorder, plus whatever progress events an agent reports through its `progress_hook`."""
     mode, stage, org, unit = validate(mode, stage, org, unit, test, pair)
     run_org = other_org(org) if test == "wrong_company" else org
-    case = build_case(run_org, unit, case_overrides)
+    rows, clean = {}, None
+    if custom is not None:
+        case, rows, clean = build_custom(org, unit, mode, stage, custom, test, run_org)
+    else:
+        case = build_case(run_org, unit, case_overrides)
     flow = load_flow(flow_path())
     if mode == "single":
         step = next((s for s in flow["steps"] if s["stage"] == stage), None)
@@ -228,7 +374,8 @@ def execute(mode: str, stage: str, org: str, unit: str, test: str | None = None,
         if st == "returns" and pair is not None:
             clients[st] = PairFilter(clients[st], pair)
 
-    with LOCK, _input_dir(empty=(test == "no_image")) as used_root, _progress_hooks(flow_stages(run_flow), on_event):
+    with LOCK, _input_dir(empty=(test == "no_image")) as used_root, _progress_hooks(flow_stages(run_flow), on_event), \
+            _custom_rows(unit, org, rows):
         folders = {st: _listing(used_root, unit, st) for st in flow_stages(run_flow)}
         store = FileStore(run_dir)
         t0 = time.monotonic()
@@ -237,7 +384,8 @@ def execute(mode: str, stage: str, org: str, unit: str, test: str | None = None,
         b = bundle(wf, store)
 
     run = {"run_id": run_id, "created_at": utcnow(), "elapsed_ms": elapsed,
-           "request": {"mode": mode, "stage": stage, "org_id": org, "unit_id": unit, "test": test, "pair": pair},
+           "request": {"mode": mode, "stage": stage, "org_id": org, "unit_id": unit, "test": test, "pair": pair,
+                       "custom": clean},
            "case": case, "flow_file": str(flow_path().relative_to(ROOT)) if flow_path().is_relative_to(ROOT) else str(flow_path()),
            "flow_used": run_flow, "input_root_used": str(used_root), "folders": folders,
            "workflow": b["workflow"], "evidence": b["evidence"], "calls": log}
@@ -389,6 +537,9 @@ def _test_view(run: dict) -> dict | None:
 def describe(run: dict) -> dict:
     wf, req = run["workflow"], run["request"]
     notes = []
+    if req.get("custom"):
+        notes.append("Custom case: the expected values (product, counts, order lines, parts) were typed in the test UI, "
+                     "not taken from the sample data, and there are no fee lines for Recovery to check.")
     if req["mode"] == "single":
         notes.append("One-stage test: only this agent ran, and status and outcome describe this stage alone. "
                      "Routing is skipped, so it runs even if a full workflow would skip it.")
@@ -396,7 +547,8 @@ def describe(run: dict) -> dict:
             notes.append(ALONE_NOTE)
     return {
         "run_id": run["run_id"], "created_at": run["created_at"], "elapsed_ms": run["elapsed_ms"],
-        "request": req, "label": SINGLE_LABEL if req["mode"] == "single" else "FULL WORKFLOW",
+        "request": req, "custom": bool(req.get("custom")),
+        "label": SINGLE_LABEL if req["mode"] == "single" else "FULL WORKFLOW",
         "notes": notes, "case": run["case"], "flow_file": run["flow_file"], "flow_id": run["flow_used"]["flow_id"],
         "input_root_used": run["input_root_used"], "test": _test_view(run),
         "workflow": {k: wf.get(k) for k in ("workflow_id", "flow_id", "org_id", "subject_id", "status", "status_reason",
