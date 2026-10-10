@@ -143,8 +143,16 @@ export default function PipelineTracePage() {
     try {
       const res = await fetch('/api/pipeline/history');
       const data = await res.json();
-      if (data.history) {
+      if (data.history && data.history.length > 0) {
         setHistoryRuns(data.history);
+        setPipelineData((prev) => {
+          if (!prev && data.history[0]?.data) {
+            const latest = data.history[0];
+            setSelectedStageDetail(latest.route === 'mfn' ? 'pack' : 'receiving');
+            return latest.data;
+          }
+          return prev;
+        });
       }
     } catch (err) {
       console.error('Failed to load execution history:', err);
@@ -686,6 +694,63 @@ export default function PipelineTracePage() {
                 <span>Pack CSV: <strong>{selectedCase.has_pack ? 'Available' : 'N/A'}</strong></span>
               </div>
             )}
+
+            {/* Stage Physical Evidence Captures (per Agent) for Benchmark Unit */}
+            <div className="pt-3 border-t border-[var(--neu-border-color)] text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Attach or Take Physical Captures for {selectedCase?.unit_id || 'Unit'} (data/input/{selectedCase?.unit_id || 'unit'}/&lt;stage&gt;):
+                </label>
+                <span className="text-[10px] font-mono text-slate-500">
+                  Upload or scan live evidence per agent
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {['receiving', 'prep', 'pack', 'returns'].map((stageKey) => (
+                  <div key={stageKey} className="rounded-xl neu-pressed-sm p-2.5 text-center flex flex-col justify-between">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+                      {stageKey} Capture
+                    </span>
+
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs">
+                        <Upload className="w-3 h-3 text-slate-700" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleFileUpload(stageKey, e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setCaptureStage(stageKey)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs"
+                      >
+                        <Camera className="w-3 h-3 text-slate-700" />
+                        <span>Capture</span>
+                      </button>
+                    </div>
+
+                    {uploadedFiles[stageKey] ? (
+                      <span className="text-[9px] font-mono text-emerald-600 block mt-1 truncate" title={uploadedFiles[stageKey]}>
+                        ✓ {uploadedFiles[stageKey]}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono text-slate-400 block mt-1">
+                        Benchmark Default
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-4 text-left">
@@ -800,7 +865,7 @@ export default function PipelineTracePage() {
 
                     <div className="flex items-center justify-center gap-1.5 flex-wrap">
                       <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs">
-                        <Upload className="w-3 h-3 text-[#773C30]" />
+                        <Upload className="w-3 h-3 text-slate-700" />
                         <span>Upload</span>
                         <input
                           type="file"
@@ -819,7 +884,7 @@ export default function PipelineTracePage() {
                         onClick={() => setCaptureStage(stageKey)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs"
                       >
-                        <Camera className="w-3 h-3 text-[#773C30]" />
+                        <Camera className="w-3 h-3 text-slate-700" />
                         <span>Capture</span>
                       </button>
                     </div>
@@ -837,18 +902,6 @@ export default function PipelineTracePage() {
                 ))}
               </div>
             </div>
-
-            {/* Local webcam + IP camera + motion-triggered capture */}
-            {captureStage && (
-              <CaptureStudio
-                stage={captureStage}
-                unitId={customUnitId || 'UNIT-0006'}
-                onClose={() => setCaptureStage(null)}
-                onCaptured={(filename, meta) => handleCaptured(captureStage, filename, meta)}
-                defaultSource={camSettings.source}
-                defaultIpUrl={camSettings.cams[captureStage]?.url || ''}
-              />
-            )}
 
             <div className="pt-2">
               <button
@@ -872,6 +925,18 @@ export default function PipelineTracePage() {
           </div>
         )}
       </section>
+
+      {/* Optical Station Inspection & Laser Scanning Studio (Available in both Benchmark & Custom Modes) */}
+      {captureStage && (
+        <CaptureStudio
+          stage={captureStage}
+          unitId={inputMode === 'benchmark' ? (selectedCase?.unit_id || 'UNIT-0006') : (customUnitId || 'UNIT-9901')}
+          onClose={() => setCaptureStage(null)}
+          onCaptured={(filename, meta) => handleCaptured(captureStage, filename, meta)}
+          defaultSource={camSettings.source}
+          defaultIpUrl={camSettings.cams[captureStage]?.url || ''}
+        />
+      )}
 
       {/* CAMERA SETTINGS MODAL (Available in both Benchmark & Custom Modes) */}
       {showCamSettings && (

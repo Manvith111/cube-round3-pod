@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/icon.png" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,7 +29,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white">
+      <body className="relative flex flex-col min-h-screen antialiased text-slate-900 bg-white" suppressHydrationWarning>
         <BackgroundShader />
         <ThemeToggle />
         <UniversalHeader />

@@ -41,12 +41,16 @@ export async function POST(req: NextRequest) {
     // Best-effort local persistence (works in local dev; read-only FS hosts
     // such as Vercel will throw here, so we swallow and rely on Supabase).
     try {
-      const baseDir = process.env.POD_DATA_DIR || path.resolve(process.cwd(), 'data/input');
-      const inputDir = path.resolve(baseDir, unitId, stage);
-      if (!fs.existsSync(inputDir)) {
-        fs.mkdirSync(inputDir, { recursive: true });
+      const dirs = [
+        path.resolve(process.cwd(), 'data/input', unitId, stage),
+        path.resolve(process.cwd(), '../data/input', unitId, stage),
+      ];
+      for (const d of dirs) {
+        try {
+          if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+          fs.writeFileSync(path.join(d, filename), buffer);
+        } catch {}
       }
-      fs.writeFileSync(path.join(inputDir, filename), buffer);
     } catch (fsErr) {
       console.warn('Local capture write skipped (read-only FS?):', fsErr);
     }
