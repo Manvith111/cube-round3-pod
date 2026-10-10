@@ -13,3 +13,5 @@ out/
 .next/
 web/.next/
 *.tsbuildinfo
+.vercel
+.env*

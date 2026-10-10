@@ -16,11 +16,17 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import csv as _csv
+import io as _io
+import json as _json
+
+import httpx
+
 from orchestration.clients import load_manifest
 from orchestration.orchestrator import discover_inputs, load_flow
 from orchestration.store import EvidenceConflict
 
-from . import captures, envfile, runner, trace_view
+from . import captures, catalog, envfile, runner, trace_view
 
 ENV_LOADED = envfile.load()  # names only; values are never printed or returned
 ENV_ALIASES = envfile.apply_model_aliases()
@@ -332,6 +338,99 @@ def pipeline_run(body: dict) -> dict:
     evidence_bundle = _bundle(workflow, store)
     return {"workflow": workflow, "evidence": evidence_bundle.get("evidence", {}),
             "case": case, "raw_inputs": raw_inputs}
+
+
+# --------------------------------------------------------------------------
+# Catalog + auto-connect: map product details (SKU / title) to a unit, so an
+# operator can scan/enter a product and the pipeline jumps straight to its unit.
+# --------------------------------------------------------------------------
+@app.get("/api/catalog")
+def get_catalog() -> dict:
+    return {"items": catalog.entries()}
+
+
+def _parse_catalog_text(text: str, fmt: str) -> list[dict]:
+    """Parse an uploaded catalog body into row dicts. ``fmt`` is 'csv' or 'json'."""
+    text = text or ""
+    if fmt == "json" or (not fmt and text.lstrip().startswith(("[", "{"))):
+        data = _json.loads(text)
+        rows = data if isinstance(data, list) else data.get("items", [])
+        return [r for r in rows if isinstance(r, dict)]
+    reader = _csv.DictReader(_io.StringIO(text))
+    return [dict(r) for r in reader]
+
+
+@app.post("/api/catalog/upload")
+def upload_catalog(body: dict) -> dict:
+    """Accept an operator catalog as ``{text, format}`` (csv/json) or ``{items:[...]}``."""
+    try:
+        items = body.get("items")
+        if items is None:
+            items = _parse_catalog_text(body.get("text", ""), (body.get("format") or "").lower())
+        count = catalog.save_uploaded(items)
+    except (ValueError, _json.JSONDecodeError, _csv.Error) as exc:
+        raise _bad(exc) from exc
+    return {"saved": count, "items": catalog.entries()}
+
+
+@app.post("/api/catalog/match")
+def match_catalog(body: dict) -> dict:
+    """Search the catalog for a SKU / product-detail query and return the best unit."""
+    query = str(body.get("query") or body.get("sku") or body.get("title") or "").strip()
+    if not query:
+        raise _bad(ValueError("query is required (sku, title, or free text)"))
+    return catalog.match(query, limit=int(body.get("limit") or 5))
+
+
+# --------------------------------------------------------------------------
+# IP camera snapshot: fetch a frame from a network camera (phone "IP Webcam"
+# app, or any HTTP/MJPEG camera) server-side, so the browser is not blocked by
+# CORS canvas-tainting. Optionally save the frame straight into a unit/stage.
+# --------------------------------------------------------------------------
+def _extract_jpeg(payload: bytes) -> bytes:
+    """Return the first complete JPEG from a snapshot or MJPEG multipart chunk."""
+    start = payload.find(b"\xff\xd8")
+    end = payload.rfind(b"\xff\xd9")
+    if start != -1 and end != -1 and end > start:
+        return payload[start:end + 2]
+    return payload
+
+
+@app.post("/api/ipcam-snapshot")
+def ipcam_snapshot(body: dict) -> dict:
+    """Grab one frame from an IP camera URL. Body: {url, unit?, stage?, role?, save?}."""
+    url = str(body.get("url") or "").strip()
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise _bad(ValueError("url must be an http(s) IP-camera snapshot or stream URL"))
+    try:
+        with httpx.stream("GET", url, timeout=10.0) as resp:
+            resp.raise_for_status()
+            chunks, total = [], 0
+            for chunk in resp.iter_bytes():
+                chunks.append(chunk)
+                total += len(chunk)
+                # One JPEG frame is plenty; stop early so an MJPEG stream does not hang.
+                if total > 2_000_000 or (b"".join(chunks).find(b"\xff\xd8") != -1
+                                         and b"".join(chunks).rfind(b"\xff\xd9") > 0):
+                    break
+        frame = _extract_jpeg(b"".join(chunks))
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"IP camera fetch failed: {type(exc).__name__}: {exc}") from exc
+    if not frame:
+        raise HTTPException(502, "IP camera returned no image data")
+
+    saved = None
+    if body.get("save"):
+        try:
+            unit = captures.check_unit(body.get("unit", ""))
+            stage = captures.check_stage(body.get("stage", ""))
+        except captures.CaptureError as exc:
+            raise _bad(exc) from exc
+        with runner.LOCK:
+            saved = captures.save(unit, stage, body.get("role", ""),
+                                  body.get("filename") or "ipcam.jpg", frame, source=f"ipcam:{url}")
+    return {"image_base64": "data:image/jpeg;base64," + base64.b64encode(frame).decode("ascii"),
+            "bytes": len(frame), "saved": saved}
 
 
 def main() -> None:
