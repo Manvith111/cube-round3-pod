@@ -1,0 +1,29 @@
+# Render Blueprint for the CUBE Pod FastAPI backend.
+# In the Render dashboard: New + -> Blueprint -> connect Manvith111/cube-round3-pod.
+# Render reads this file, creates the service, and prompts for the secret env vars
+# (the ones marked `sync: false`). The Next.js frontend on Vercel points its
+# POD_BACKEND_URL at the URL this service gets.
+services:
+  - type: web
+    name: cube-pod-backend
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      # --- Vision model (Groq / any OpenAI-compatible endpoint) ---
+      - key: VLM_API_KEY        # secret: entered in the Render dashboard
+        sync: false
+      - key: VLM_MODEL_GROQ     # the vision model name, e.g. a Groq vision model
+        sync: false
+      - key: VLM_BASE_URL
+        value: https://api.groq.com/openai/v1
+      # --- Logging ---
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
