@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "fastapi",
+      "entrypoint": "app.py"
+    },
+    "shyam-web": {
+      "root": "ui/experiments/shyam-web",
+      "framework": "nextjs",
+      "bindings": [
+        { "type": "service", "service": "app", "format": "url", "env": "POD_BACKEND_URL" }
+      ]
+    },
+    "controlled-chaos": {
+      "root": "ui/experiments/controlled-chaos",
+      "framework": "nextjs"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": { "service": "shyam-web" } }
+  ]
+}
