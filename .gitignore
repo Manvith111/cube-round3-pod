@@ -10,3 +10,6 @@ venv/
 out/
 .pytest_cache/
 *.egg-info/
+.next/
+web/.next/
+*.tsbuildinfo

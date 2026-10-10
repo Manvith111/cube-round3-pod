@@ -6,19 +6,15 @@
       "framework": "fastapi",
       "entrypoint": "app.py"
     },
-    "shyam-web": {
-      "root": "ui/experiments/shyam-web",
+    "web": {
+      "root": "web",
       "framework": "nextjs",
       "bindings": [
         { "type": "service", "service": "app", "format": "url", "env": "POD_BACKEND_URL" }
       ]
-    },
-    "controlled-chaos": {
-      "root": "ui/experiments/controlled-chaos",
-      "framework": "nextjs"
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": { "service": "shyam-web" } }
+    { "source": "/(.*)", "destination": { "service": "web" } }
   ]
 }

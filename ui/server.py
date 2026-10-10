@@ -256,6 +256,84 @@ def override(run_id: str, body: dict) -> dict:
         raise _bad(exc) from exc
 
 
+# --------------------------------------------------------------------------
+# Deployment-friendly endpoints consumed by the Next.js `web/` frontend.
+# These run the real orchestrator in-process (no child-process spawn) so the
+# frontend works both locally and on serverless hosts (Vercel) by calling the
+# backend service over HTTP via POD_BACKEND_URL.
+# --------------------------------------------------------------------------
+from orchestration.orchestrator import bundle as _bundle  # noqa: E402
+from orchestration.orchestrator import default_flow_path as _default_flow_path  # noqa: E402
+from orchestration.orchestrator import run_workflow as _run_workflow  # noqa: E402
+from orchestration.store import FileStore as _FileStore  # noqa: E402
+from shared.utils import sample_data as _sample_data  # noqa: E402
+
+
+def _pipeline_cases_preview() -> list[dict]:
+    cases_path = _sample_data.data_dir() / "cases.json"
+    import json as _json
+    cases = _json.loads(cases_path.read_text(encoding="utf-8"))
+
+    def units(kind: str) -> set[str]:
+        return {r["unit_id"] for r in _sample_data.rows(kind)}
+
+    pack_u, prep_u, ret_u = units("pack"), units("prep"), units("returns")
+    out = []
+    for c in cases:
+        route = c.get("route") or "unknown"
+        returned = bool(c.get("returned"))
+        out.append({
+            "unit_id": c["unit_id"], "org_id": c["org_id"], "route": route, "returned": returned,
+            "has_pack": c["unit_id"] in pack_u, "has_prep": c["unit_id"] in prep_u,
+            "has_returns": c["unit_id"] in ret_u,
+            "label": f"{c['unit_id']} [{route.upper()}{' + RETURN' if returned else ''}] • {c['org_id']}",
+        })
+    return out
+
+
+@app.get("/api/pipeline-cases")
+def pipeline_cases() -> dict:
+    try:
+        return {"cases": _pipeline_cases_preview()}
+    except Exception as exc:  # noqa: BLE001 - surfaced to the frontend
+        raise _bad(exc) from exc
+
+
+@app.post("/api/pipeline-run")
+def pipeline_run(body: dict) -> dict:
+    """Run the full workflow for one unit and return {workflow, evidence, case, raw_inputs}."""
+    unit_id = body.get("unit_id") or "UNIT-0006"
+    org_id = body.get("org_id") or "org_demo_bravo"
+    custom = body.get("custom_payload") or {}
+
+    def _one(kind: str) -> dict | None:
+        try:
+            return dict(_sample_data.row(kind, unit_id, org_id))
+        except LookupError:
+            return None
+
+    raw_inputs = {
+        "receiving": _one("receiving"), "prep": _one("prep"), "pack": _one("pack"),
+        "returns": _one("returns"), "fees": _sample_data.fee_lines(unit_id, org_id),
+    }
+
+    req_route = custom.get("route")
+    req_returned = custom.get("returned")
+    route = req_route or _sample_data.route(unit_id, org_id)
+    returned = req_returned if isinstance(req_returned, bool) else _sample_data.has("returns", unit_id, org_id)
+    case = {"org_id": org_id, "unit_id": unit_id, "route": route, "returned": returned}
+
+    flow = load_flow(_default_flow_path())
+    store = _FileStore()
+    try:
+        workflow = _run_workflow(case, flow, store)
+    except Exception as exc:  # noqa: BLE001 - surfaced to the frontend
+        raise HTTPException(500, f"Orchestrator failed: {type(exc).__name__}: {exc}") from exc
+    evidence_bundle = _bundle(workflow, store)
+    return {"workflow": workflow, "evidence": evidence_bundle.get("evidence", {}),
+            "case": case, "raw_inputs": raw_inputs}
+
+
 def main() -> None:
     import uvicorn
     print(f"Pod test UI on http://{HOST}:{PORT}  (local only, no authentication)")

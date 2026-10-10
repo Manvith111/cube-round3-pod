@@ -1,0 +1,408 @@
+@import "tailwindcss";
+
+/* 
+ * CRITICAL FOR NEXT.JS + TAILWIND V4:
+ * Explicitly define dark mode variant to use .dark class on <html> 
+ * instead of operating system media query prefers-color-scheme!
+ */
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --pullcord-top: 0px;     /* anchor offset from the top */
+  --pullcord-right: 1.5rem; /* distance from the right edge — pushed safely outside navbar */
+  --pullcord-z: 70;        /* wrapper z-index above header */
+  --pullcord-ink: rgba(100, 116, 139, 0.45); /* rope colour in light mode */
+
+  --neu-bg: #E8EDF5;
+  --neu-surface: rgba(255, 255, 255, 0.94);
+  --neu-surface-solid: #FFFFFF;
+  --neu-text-primary: #0F172A;
+  --neu-text-secondary: #334155;
+  --neu-text-muted: #64748B;
+  --neu-accent: #773C30;
+  --neu-accent-hover: #991B1B;
+  --neu-border-color: rgba(148, 163, 184, 0.45);
+
+  /* Clean, crisp depth with clear distinguishable borders and contrast */
+  --neu-card-shadow: 0 6px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --neu-card-hover-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --neu-card-sm-shadow: 0 3px 10px -1px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --neu-pressed-shadow: inset 0 2px 5px rgba(15, 23, 42, 0.08), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --neu-pressed-deep-shadow: inset 0 3px 8px rgba(15, 23, 42, 0.11), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --neu-pressed-sm-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.07);
+  --neu-icon-well-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.08);
+}
+
+/* Pure White in Light Mode, Deep Obsidian in Dark Mode */
+html, body {
+  background-color: #FFFFFF;
+  color: #0F172A;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: var(--neu-text-primary);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+html:not(.dark) body {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+html.dark body {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* =========================================================================
+   BULLETPROOF LIGHT & DARK MODE READABILITY & CONTRAST
+   ========================================================================= */
+
+/* LIGHT MODE: High-contrast dark ink across all headings, inputs, and text */
+html:not(.dark) body {
+  color: #0F172A !important;
+}
+
+html:not(.dark) {
+  --pullcord-ink: rgba(15, 23, 42, 0.4);
+}
+
+html:not(.dark) h1, 
+html:not(.dark) h2, 
+html:not(.dark) h3, 
+html:not(.dark) h4, 
+html:not(.dark) h5, 
+html:not(.dark) h6 {
+  color: #0F172A !important;
+}
+
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  color: #0F172A !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* In light mode, symbols/accents MUST NOT be green! Map to Shrimp Brown / Vermilion */
+html:not(.dark) .neu-accent,
+html:not(.dark) [class*="text-[#C4F82A]"],
+html:not(.dark) [class*="text-[#6BFF86]"],
+html:not(.dark) [class*="text-[#00FFAA]"] {
+  color: #773C30 !important;
+}
+
+html:not(.dark) [class*="text-[#5A3E2B]"],
+html:not(.dark) [class*="text-[#6E492F]"] {
+  color: #773C30 !important;
+}
+
+/* DARK MODE: Exact Vesper.ai Palette (Pure black #000000, #ffffff text, #9a9a9a muted, #d8d8d8 stat) */
+html.dark {
+  --pullcord-ink: rgba(255, 255, 255, 0.35);
+  --bg: #000000;
+  --text: #ffffff;
+  --muted: #9a9a9a;
+  --stat: #d8d8d8;
+  --border: rgba(255, 255, 255, 0.16);
+  --border-soft: rgba(255, 255, 255, 0.12);
+
+  --neu-bg: #000000;
+  --neu-surface: rgba(18, 18, 18, 0.85);
+  --neu-surface-solid: #0A0A0A;
+  --neu-text-primary: #FFFFFF;
+  --neu-text-secondary: #D8D8D8;
+  --neu-text-muted: #9A9A9A;
+  --neu-accent: #FFFFFF;
+  --neu-accent-hover: #E2E8F0;
+  --neu-border-color: rgba(255, 255, 255, 0.16);
+  --neu-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --neu-card-hover-shadow: 0 14px 40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --neu-pressed-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html.dark body {
+  color: #FFFFFF !important;
+}
+
+html.dark h1, 
+html.dark h2, 
+html.dark h3, 
+html.dark h4, 
+html.dark h5, 
+html.dark h6 {
+  color: #FFFFFF !important;
+}
+
+html.dark input, 
+html.dark textarea,
+html.dark select {
+  color: #FFFFFF !important;
+}
+
+html.dark input::placeholder, 
+html.dark textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+html.dark .neu-accent,
+html.dark [class*="text-[#773C30]"],
+html.dark [class*="text-[#5A3E2B]"],
+html.dark [class*="text-[#6E492F]"],
+html.dark [class*="text-[#C4F82A]"] {
+  color: #FFFFFF !important;
+}
+
+/* =========================================================================
+   BRUSH-STROKE HIGHLIGHTER
+   Uses SVG feTurbulence + feDisplacementMap (defined in layout.tsx) to
+   produce organic, bristle-edged paint-stroke edges — not a rectangle.
+   Light Mode: warm amber / shrimp-brown stroke, black cherry ink
+   Dark Mode:  NO brush stroke — accent text color only, no background paint
+   ========================================================================= */
+
+.hl-green, .hl-highlight {
+  position: relative;
+  display: inline;
+  padding: 0.04em 0.32em;
+  margin: 0 0.06em;
+  font-weight: 800;
+}
+
+.hl-green::before, .hl-highlight::before {
+  content: '';
+  position: absolute;
+  inset: -0.05em -0.16em;
+  z-index: -1;
+  border-radius: 2px;
+  filter: url(#brush-stroke-filter);
+}
+
+/* Light Mode: warm amber brush stroke, tight around text */
+html:not(.dark) .hl-green::before,
+html:not(.dark) .hl-highlight::before {
+  background: linear-gradient(104deg,
+    rgba(200, 120, 38, 0.28) 0%,
+    rgba(215, 135, 42, 0.80) 7%,
+    rgba(205, 125, 40, 0.82) 88%,
+    rgba(175, 100, 30, 0.32) 100%
+  );
+}
+
+html:not(.dark) .hl-green,
+html:not(.dark) .hl-highlight {
+  color: #26050A !important;
+  text-shadow: none;
+}
+
+/* Dark Mode: NO brush stroke background — just accent green text color */
+html.dark .hl-green::before,
+html.dark .hl-highlight::before {
+  display: none;
+}
+
+html.dark .hl-green,
+html.dark .hl-highlight {
+  color: #FFFFFF !important;
+  text-shadow: none;
+}
+
+/* Sleek Action Button Highlighter: Modern Tech Obsidian */
+html:not(.dark) .neu-btn-highlight {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0F172A 100%);
+  color: #FFFFFF !important;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), 0 2px 6px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease-out;
+}
+
+html:not(.dark) .neu-btn-highlight:hover {
+  background: linear-gradient(135deg, #1E293B 0%, #334155 55%, #1E293B 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3), 0 4px 10px rgba(15, 23, 42, 0.15);
+}
+
+html:not(.dark) .neu-btn-highlight:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark Mode Button Highlighter: Bamboo Haze / Pine Leaf */
+html.dark .neu-btn-highlight {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E7E7E7 48%, #CFCFCF 100%) !important;
+  color: #111111 !important;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 0 20px rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.25s ease-out;
+}
+
+html.dark .neu-btn-highlight:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3F6FF 42%, #D5DEF2 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 0 26px rgba(255, 255, 255, 0.4), 0 8px 18px rgba(255, 255, 255, 0.14);
+}
+
+html.dark .neu-btn-highlight:active {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+/* =========================================================================
+   TRANSLUCENT GLASSMORPHISM + NEUMORPHIC DUAL SHADOW SYSTEM
+   ========================================================================= */
+
+.neu-flat {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-card-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.neu-flat-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neu-flat-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--neu-card-hover-shadow);
+}
+
+.neu-flat-sm {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-card-sm-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.neu-pressed {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-pressed-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.neu-pressed-deep {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-pressed-deep-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.neu-pressed-sm {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-pressed-sm-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* BUTTONS */
+.neu-btn-primary {
+  background-color: #1E293B;
+  color: #FFFFFF !important;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.25), -3px -3px 8px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.25s ease-out;
+}
+
+html.dark .neu-btn-primary {
+  background-color: #131924;
+  color: #FFFFFF !important;
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.8), -3px -3px 8px rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neu-btn-primary:hover {
+  transform: translateY(-1px);
+  background-color: #0F172A;
+}
+
+html.dark .neu-btn-primary:hover {
+  background-color: #1C2433;
+  color: #FFFFFF !important;
+}
+
+.neu-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.neu-btn-secondary {
+  background-color: var(--neu-surface);
+  color: var(--neu-text-primary);
+  box-shadow: var(--neu-card-sm-shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--neu-border-color);
+  transition: all 0.25s ease-out;
+}
+
+html.dark .neu-btn-secondary {
+  color: #FFFFFF !important;
+}
+
+.neu-btn-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.neu-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* INPUTS */
+.neu-input {
+  background-color: var(--neu-surface);
+  color: var(--neu-text-primary);
+  box-shadow: var(--neu-pressed-shadow);
+  border: 1px solid var(--neu-border-color);
+  outline: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.neu-input:focus {
+  box-shadow: var(--neu-pressed-deep-shadow);
+  border-color: var(--neu-accent);
+}
+
+.neu-input::placeholder {
+  color: var(--neu-text-muted);
+}
+
+/* ICON WELL */
+.neu-icon-well {
+  background-color: var(--neu-surface);
+  box-shadow: var(--neu-icon-well-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--neu-border-color);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+button {
+  min-height: 44px;
+}
